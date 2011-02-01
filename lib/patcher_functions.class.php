@@ -1,8 +1,16 @@
 <?php
 
 /**
- * Berekent het root-pad van het project
+* Some functions used by the shell scripts
+* 
+* @author Bert-Jan de Lange <bert-jan@bugbyte.nl>
+*/
+
+/**
+ * Calculates the root path of the project
  *
+ * @param string $patcher_path
+ * @param string $filepath
  */
 function findRootPath($patcher_path, $filepath)
 {

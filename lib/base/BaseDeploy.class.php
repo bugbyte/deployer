@@ -1,71 +1,71 @@
 <?php
 
 /**
- * Standaard deployment functionaliteit
+ * Standard deploymer
  *
  * @author Bert-Jan de Lange <bert-jan@bugbyte.nl>
  */
 class BaseDeploy
 {
 	/**
-	 * Formattering van de deployment directories
+	 * Format of the deployment directories
 	 *
 	 * @var string
 	 */
 	protected $remote_dir_format = '%project_name%_%timestamp%';
 
 	/**
-	 * Datum formattering in de naam van de deployment directories
-	 * (format parameter van date())
+	 * Date format in the naam of the deployment directories
+	 * (format parameter of date())
 	 *
 	 * @var string
 	 */
 	protected $remote_dir_timestamp_format = 'Y-m-d_His';
 
 	/**
-	 * De codenaam van de applicatie
+	 * The codename of the project
 	 *
 	 * @var string
 	 */
 	protected $project_name = null;
 
 	/**
-	 * De root directory van het project
+	 * The root path of the project
 	 *
 	 * @var string
 	 */
 	protected $basedir = null;
 
 	/**
-	 * De hostname van de remote server
+	 * The hostname of the remote server
 	 *
 	 * @var string
 	 */
 	protected $remote_host = null;
 
 	/**
-	 * De gebruikersnaam van het account op de remote server
+	 * The username on the remote server
 	 *
 	 * @var string
 	 */
 	protected $remote_user = null;
 
 	/**
-	 * De directory op de remote server waar dit project staat
+	 * The project's path on the remote server
 	 *
 	 * @var string
 	 */
 	protected $remote_dir = null;
 
 	/**
-	 * Alle bestanden die als rsync exclude moeten worden gebruikt
+	 * All files to be used in rsync --exclude-from
 	 *
 	 * @var array
 	 */
 	protected $rsync_excludes = array();
 
 	/**
-	 * De timestamp voor deze deployment waarmee gewerkt gaat worden
+	 * The timestamp for this deployment
 	 *
 	 * @var timestamp
 	 */

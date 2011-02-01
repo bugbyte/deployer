@@ -1,8 +1,11 @@
 <?php
 
 /**
- * Alle SQL updates dienen deze interface te implementeren (om up() en down() te verplichten).
- * Een voorbeeld van zo'n class:
+ * All SQL updates should implement this interface so you don't forget to add up() and down().
+ * 
+ * @author Bert-Jan de Lange <bert-jan@bugbyte.nl>
+ * 
+ * An example of an SQL update class:
  *
 
 	sql_20110104_164856.class.php:
@@ -34,20 +37,20 @@
 	}
 
  *
- * De updates worden altijd chronologisch uitgevoerd, en bij terugdraaien van de updates (down()) omgekeerd chronologisch.
- * Het is dus mogelijk om tabellen die in een oudere file zijn gemaakt te updaten met een nieuwere (bv. alter table...).
+ * The updates are always run in chronologic order, and in case of a rollback (down()) the order is reversed.
+ * This ensures you can have updates changing things from earlier updates even during one deployment.
  */
 interface SQL_update
 {
 	/**
-	 * Geeft de SQL statements terug die moeten worden uitgevoerd om de database te upgraden naar deze timestamp
+	 * Returns the SQL statements needed to upgrade the database to this timestamp.
 	 *
 	 * @returns string
 	 */
 	public function up();
 
 	/**
-	 * Geeft de SQL statements terug die de wijzigingen van up() ongedaan maken
+	 * Returms the SQL statements that rollback the up()-method's changes.
 	 *
 	 * @returns string
 	 */
