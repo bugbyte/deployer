@@ -239,14 +239,17 @@ class BaseDeploy
 	protected $cluster_specific_files = array();
 
 	/**
-	 * Cache voor listFilesToRename()
+	 * Cache for listFilesToRename()
 	 *
 	 * @var array
 	 */
 	protected $files_to_rename = array();
 
 	/**
-	 * Met dit commando worden APC caches op de remote hosts geleegd (zowel resp. apache/mod_php als nginx/php-fpm)
+	 * This command clear the APC caches on the remote hosts geleegd (both apache/mod_php on port 80 aswell as nginx/php-fpm on port 82)
+	 * You'll probably want to change this for your own setup.
+	 *
+	 * The clean_apc.php simply contains calls to apc_clear_cache() and clearstatcache().
 	 *
 	 * @var string
 	 */
