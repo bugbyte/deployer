@@ -15,7 +15,7 @@ class BaseDeploy
 	protected $remote_dir_format = '%project_name%_%timestamp%';
 
 	/**
-	 * Date format in the naam of the deployment directories
+	 * Date format in the name of the deployment directories
 	 * (format parameter of date())
 	 *
 	 * @var string
@@ -72,91 +72,91 @@ class BaseDeploy
 	protected $timestamp = null;
 
 	/**
-	 * De directory waar de nieuwe deploy terecht gaat komen
+	 * The target directory of the new deployment on the remote server(s)
 	 *
 	 * @var string
 	 */
 	protected $remote_target_dir = null;
 
 	/**
-	 * De timestamp van de voorlaatste deployment
+	 * The timestamp of the 2nd-latest deployment
 	 *
 	 * @var timestamp
 	 */
 	protected $previous_timestamp = null;
 
 	/**
-	 * De timestamp van de laatste deployment
+	 * The timestamp of the latest deployment
 	 *
 	 * @var timestamp
 	 */
 	protected $last_timestamp = null;
 
 	/**
-	 * De directory van de voorlaatste deployment
+	 * The directory of the 2nd-latest deployment
 	 *
 	 * @var string
 	 */
 	protected $previous_remote_target_dir = null;
 
 	/**
-	 * De directory van de laatste deployment
+	 * De directory of the latest deployment
 	 *
 	 * @var string
 	 */
 	protected $last_remote_target_dir = null;
 
 	/**
-	 * Alle directories die moeten worden doorzocht naar SQL update files
+	 * All directories to be scanned for SQL update files
 	 *
 	 * @var array
 	 */
 	protected $database_dirs = array();
 
 	/**
-	 * De hostname van de database server
+	 * The hostname of the database server where SQL updates are sent to
 	 *
 	 * @var string
 	 */
 	protected $database_host = null;
 
 	/**
-	 * De naam van de database waar de SQL updates naartoe gaan
+	 * The name of the database itself
 	 *
 	 * @var string
 	 */
 	protected $database_name = null;
 
 	/**
-	 * De gebruikersnaam van de database
+	 * The database username
 	 *
 	 * @var string
 	 */
 	protected $database_user = null;
 
 	/**
-	 * Het wachtwoord dat bij de gebruikersnaam hoort
+	 * The database password
 	 *
 	 * @var string
 	 */
 	protected $database_pass = null;
 
 	/**
-	 * Of de database-gegevens gecontroleerd zijn
+	 * Whether the database settings have been verified
 	 *
 	 * @var boolean
 	 */
 	protected $database_checked = false;
 
 	/**
-	 * Het pad van de logfile, als logging gewenst is
+	 * The path of the logfile, if logging is enabled
 	 *
 	 * @var string
 	 */
 	protected $logfile = null;
 
 	/**
-	 * Doellocatie (stage of prod)
+	 * The target location (stage or prod usually)
 	 *
 	 * @var string
 	 */
