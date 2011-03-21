@@ -253,7 +253,7 @@ class BaseDeploy
 	 *
 	 * @var string
 	 */
-	protected $clear_cache_cmd = 'curl -s -S --connect-timeout 3 localhost/clear_apc.php; curl -s -S --connect-timeout 3 localhost:82/clear_apc.php';
+	protected $clear_cache_cmd = 'curl -s -S --connect-timeout 3 localhost/clear_apc.php';
 
 	/**
 	 * Programma paden
