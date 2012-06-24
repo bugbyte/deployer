@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Replace this stub by your own class to integrate it within your own framework
+ * Stub class om de standaard deployment uit te kunnen breiden met codebase- of project-specifieke functionaliteit
  *
  * @author Bert-Jan de Lange <bert-jan@bugbyte.nl>
  */

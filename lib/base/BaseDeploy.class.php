@@ -1,162 +1,162 @@
 <?php
 
 /**
- * Standard deploymer
+ * Standaard deployment functionaliteit
  *
  * @author Bert-Jan de Lange <bert-jan@bugbyte.nl>
  */
 class BaseDeploy
 {
 	/**
-	 * Format of the deployment directories
+	 * Formattering van de deployment directories
 	 *
 	 * @var string
 	 */
 	protected $remote_dir_format = '%project_name%_%timestamp%';
 
 	/**
-	 * Date format in the name of the deployment directories
-	 * (format parameter of date())
+	 * Datum formattering in de naam van de deployment directories
+	 * (format parameter van date())
 	 *
 	 * @var string
 	 */
 	protected $remote_dir_timestamp_format = 'Y-m-d_His';
 
 	/**
-	 * The codename of the project
+	 * De codenaam van de applicatie
 	 *
 	 * @var string
 	 */
 	protected $project_name = null;
 
 	/**
-	 * The root path of the project
+	 * De root directory van het project
 	 *
 	 * @var string
 	 */
 	protected $basedir = null;
 
 	/**
-	 * The hostname of the remote server
+	 * De hostname van de remote server
 	 *
 	 * @var string
 	 */
 	protected $remote_host = null;
 
 	/**
-	 * The username on the remote server
+	 * De gebruikersnaam van het account op de remote server
 	 *
 	 * @var string
 	 */
 	protected $remote_user = null;
 
 	/**
-	 * The project's path on the remote server
+	 * De directory op de remote server waar dit project staat
 	 *
 	 * @var string
 	 */
 	protected $remote_dir = null;
 
 	/**
-	 * All files to be used in rsync --exclude-from
+	 * Alle bestanden die als rsync exclude moeten worden gebruikt
 	 *
 	 * @var array
 	 */
 	protected $rsync_excludes = array();
 
 	/**
-	 * The timestamp for this deployment
+	 * De timestamp voor deze deployment waarmee gewerkt gaat worden
 	 *
 	 * @var timestamp
 	 */
 	protected $timestamp = null;
 
 	/**
-	 * The target directory of the new deployment on the remote server(s)
+	 * De directory waar de nieuwe deploy terecht gaat komen
 	 *
 	 * @var string
 	 */
 	protected $remote_target_dir = null;
 
 	/**
-	 * The timestamp of the 2nd-latest deployment
+	 * De timestamp van de voorlaatste deployment
 	 *
 	 * @var timestamp
 	 */
 	protected $previous_timestamp = null;
 
 	/**
-	 * The timestamp of the latest deployment
+	 * De timestamp van de laatste deployment
 	 *
 	 * @var timestamp
 	 */
 	protected $last_timestamp = null;
 
 	/**
-	 * The directory of the 2nd-latest deployment
+	 * De directory van de voorlaatste deployment
 	 *
 	 * @var string
 	 */
 	protected $previous_remote_target_dir = null;
 
 	/**
-	 * De directory of the latest deployment
+	 * De directory van de laatste deployment
 	 *
 	 * @var string
 	 */
 	protected $last_remote_target_dir = null;
 
 	/**
-	 * All directories to be scanned for SQL update files
+	 * Alle directories die moeten worden doorzocht naar SQL update files
 	 *
 	 * @var array
 	 */
 	protected $database_dirs = array();
 
 	/**
-	 * The hostname of the database server where SQL updates are sent to
+	 * De hostname van de database server
 	 *
 	 * @var string
 	 */
 	protected $database_host = null;
 
 	/**
-	 * The name of the database itself
+	 * De naam van de database waar de SQL updates naartoe gaan
 	 *
 	 * @var string
 	 */
 	protected $database_name = null;
 
 	/**
-	 * The database username
+	 * De gebruikersnaam van de database
 	 *
 	 * @var string
 	 */
 	protected $database_user = null;
 
 	/**
-	 * The database password
+	 * Het wachtwoord dat bij de gebruikersnaam hoort
 	 *
 	 * @var string
 	 */
 	protected $database_pass = null;
 
 	/**
-	 * Whether the database settings have been verified
+	 * Of de database-gegevens gecontroleerd zijn
 	 *
 	 * @var boolean
 	 */
 	protected $database_checked = false;
 
 	/**
-	 * The path of the logfile, if logging is enabled
+	 * Het pad van de logfile, als logging gewenst is
 	 *
 	 * @var string
 	 */
 	protected $logfile = null;
 
 	/**
-	 * The target location (stage or prod usually)
+	 * Doellocatie (stage of prod)
 	 *
 	 * @var string
 	 */
@@ -175,6 +175,13 @@ class BaseDeploy
 	 * @var string
 	 */
 	protected $datadir_patcher = null;
+
+	/**
+	 * Het pad van de gearman restarter, relatief vanaf de project root
+	 *
+	 * @var string
+	 */
+	protected $gearman_restarter = null;
 
 	/**
 	 * Directories waarin de site zelf dingen kan schrijven
@@ -214,6 +221,25 @@ class BaseDeploy
 	protected $target_specific_files = array();
 
 	/**
+	 * settings van gearman inclusief worker functies die herstart moeten worden
+	 * na deployment
+	 *
+	 * voorbeeld:
+	 * 		array(
+	 *			'servers' => array(
+	 *				array('ip' => ipadres, 'port' => gearmanport)
+	 * 			),
+	 * 			'workers' => array(
+	 *				'functienaam1',
+	 *				'functienaam2',
+	 * 			)
+	 * 		)
+	 *
+	 * @var array
+	 */
+	protected $gearman = array();
+
+	/**
 	 * Files die specifiek zijn per clusterrol (master/node)
 	 *
 	 * voorbeeld:
@@ -239,21 +265,18 @@ class BaseDeploy
 	protected $cluster_specific_files = array();
 
 	/**
-	 * Cache for listFilesToRename()
+	 * Cache voor listFilesToRename()
 	 *
 	 * @var array
 	 */
 	protected $files_to_rename = array();
 
 	/**
-	 * This command clear the APC caches on the remote hosts geleegd (both apache/mod_php on port 80 aswell as nginx/php-fpm on port 82)
-	 * You'll probably want to change this for your own setup.
-	 *
-	 * The clean_apc.php simply contains calls to apc_clear_cache() and clearstatcache().
+	 * Met dit commando worden APC caches op de remote hosts geleegd (zowel resp. apache/mod_php als nginx/php-fpm)
 	 *
 	 * @var string
 	 */
-	protected $clear_cache_cmd = 'curl -s -S --connect-timeout 3 localhost/clear_apc.php';
+	protected $clear_cache_cmd = 'curl -s -S localhost/clear_apc.php';
 
 	/**
 	 * Programma paden
@@ -265,7 +288,6 @@ class BaseDeploy
 	 * Bouwt een nieuwe Deploy class op met de gegeven opties
 	 *
 	 * @param array $options
-	 * @return BaseDeploy
 	 */
 	public function __construct(array $options)
 	{
@@ -273,10 +295,10 @@ class BaseDeploy
 		$this->basedir					= $options['basedir'];
 		$this->remote_host				= $options['remote_host'];
 		$this->remote_user				= $options['remote_user'];
-		$this->database_dirs			= (array) $options['database_dirs'];
+		$this->database_dirs			= isset($options['database_dirs']) ? (array) $options['database_dirs'] : array();
 		$this->target					= $options['target'];
 		$this->remote_dir				= $options['remote_dir'] .'/'. $this->target;
-		$this->database_patcher 		= $options['database_patcher'];
+		$this->database_patcher 		= isset($options['database_patcher']) ? $options['database_patcher'] : null;
 
 		// als database host niet wordt meegegeven automatisch de eerste remote host (clustermaster) pakken.
 		$this->database_host	= isset($options['database_host']) ? $options['database_host'] : (is_array($this->remote_host) ? $this->remote_host[0] : $this->remote_host);
@@ -302,11 +324,17 @@ class BaseDeploy
 		if (isset($options['datadir_patcher']))
 			$this->datadir_patcher = $options['datadir_patcher'];
 
+		if (isset($options['gearman_restarter']))
+			$this->gearman_restarter = $options['gearman_restarter'];
+
 		if (isset($options['auto_init']))
 			$this->auto_init = $options['auto_init'];
 
 		if (isset($options['target_specific_files']))
 			$this->target_specific_files = $options['target_specific_files'];
+
+		if (isset($options['gearman']))
+			$this->gearman = $options['gearman'];
 
 		if (isset($options['cluster_specific_files']))
 			$this->cluster_specific_files = $options['cluster_specific_files'];
@@ -317,7 +345,7 @@ class BaseDeploy
 		if (!$this->auto_init)
 			return;
 
-		echo PHP_EOL . 'find timestamps: ' . $this->find_timestamps_on_init . PHP_EOL;
+		echo PHP_EOL . 'find timestamps: '. PHP_EOL;
 
 		$this->initialize();
 	}
@@ -363,14 +391,15 @@ class BaseDeploy
 			{
 				if ($key == 0) continue;
 
-				$this->prepareRemoteDirectory($remote_host, str_replace('clustermaster', 'clusternode', $this->remote_dir));
+				$this->prepareRemoteDirectory($remote_host, $this->generateClusterDirname($key, $this->remote_dir));
 			}
 		}
 
 		if ($action == 'update')
 			$this->checkFiles(is_array($this->remote_host) ? $this->remote_host[0] : $this->remote_host);
 
-		$this->checkDatabase(null, $action);
+		if (!empty($this->database_dirs))
+			$this->checkDatabase($this->database_host, $action);
 
 		if ($action == 'update')
 		{
@@ -379,7 +408,7 @@ class BaseDeploy
 				// eerst preDeploy draaien per host, dan alle files synchen
 				foreach ($this->remote_host as $key => $remote_host)
 				{
-					$remote_dir = $key == 0 ? $this->remote_dir : str_replace('clustermaster', 'clusternode', $this->remote_dir);
+					$remote_dir = $this->generateClusterDirname($key, $this->remote_dir);
 
 					if ($files = $this->listFilesToRename($remote_host, $remote_dir))
 					{
@@ -425,35 +454,41 @@ class BaseDeploy
 			// eerst preDeploy draaien per host, dan alle files synchen
 			foreach ($this->remote_host as $key => $remote_host)
 			{
-				$remote_dir = $key == 0 ? $this->remote_dir : str_replace('clustermaster', 'clusternode', $this->remote_dir);
+				$remote_dir = $this->generateClusterDirname($key, $this->remote_dir);
 
-				$this->preDeploy($remote_host, $remote_dir);
-				$this->updateFiles($remote_host, $remote_dir);
+				$this->preDeploy($remote_host, $remote_dir, $this->remote_target_dir);
+				$this->updateFiles($remote_host, $remote_dir, $this->remote_target_dir);
 			}
 
 			// na de uploads de database prepareren
-			$this->updateDatabase();
+			if (!empty($this->database_dirs))
+				$this->updateDatabase($this->database_host, $this->remote_dir, $this->remote_target_dir);
 
-			// alles de files er database klaarstaan kan de nieuwe versie geactiveerd worden
+			// als de files en database klaarstaan kan de nieuwe versie geactiveerd worden
 			// door de symlinks te updaten en postDeploy te draaien
 			foreach ($this->remote_host as $key => $remote_host)
 			{
-				$remote_dir = $key == 0 ? $this->remote_dir : str_replace('clustermaster', 'clusternode', $this->remote_dir);
+				$remote_dir = $this->generateClusterDirname($key, $this->remote_dir);
 
-				$this->updateSymlink($remote_host, $remote_dir);
-				$this->postDeploy($remote_host, $remote_dir);
-				$this->clearRemoteCaches($remote_host);
+				$this->changeSymlink($remote_host, $remote_dir, $this->remote_target_dir);
+				$this->postDeploy($remote_host, $remote_dir, $this->remote_target_dir);
+				$this->clearRemoteCaches($remote_host, $remote_dir, $this->remote_target_dir);
 			}
 		}
 		else
 		{
-			$this->preDeploy($this->remote_host, $this->remote_dir);
-			$this->updateFiles();
-			$this->updateDatabase();
-			$this->updateSymlink();
-			$this->postDeploy($this->remote_host, $this->remote_dir);
-			$this->clearRemoteCaches($this->remote_host);
+			$this->preDeploy($this->remote_host, $this->remote_dir, $this->remote_target_dir);
+			$this->updateFiles($this->remote_host, $this->remote_dir, $this->remote_target_dir);
+
+			if (!empty($this->database_dirs))
+				$this->updateDatabase($this->database_host, $this->remote_dir, $this->remote_target_dir);
+
+			$this->changeSymlink($this->remote_host, $this->remote_dir, $this->remote_target_dir);
+			$this->postDeploy($this->remote_host, $this->remote_dir, $this->remote_target_dir);
+			$this->clearRemoteCaches($this->remote_host, $this->remote_dir, $this->remote_target_dir);
 		}
+
+		$this->cleanup();
 	}
 
 	/**
@@ -470,35 +505,108 @@ class BaseDeploy
 
 			if (is_array($this->remote_host))
 			{
+				// eerst op alle hosts de symlink terugdraaien
 				foreach ($this->remote_host as $key => $remote_host)
 				{
-					$remote_dir = $key == 0 ? $this->remote_dir : str_replace('clustermaster', 'clusternode', $this->remote_dir);
+					$remote_dir = $this->generateClusterDirname($key, $this->remote_dir);
 
-					$this->preRollback($remote_host, $remote_dir);
-					$this->rollbackSymlink($remote_host, $remote_dir);
-					$this->rollbackDatabase();
-					$this->rollbackFiles($remote_host, $remote_dir);
-					$this->postRollback($remote_host, $remote_dir);
-					$this->clearRemoteCaches($remote_host);
+					$this->preRollback($remote_host, $remote_dir, $this->previous_remote_target_dir);
+					$this->changeSymlink($remote_host, $remote_dir, $this->previous_remote_target_dir);
+				}
+
+				// nadat de symlinks zijn teruggedraaid de database terugdraaien
+				if (!empty($this->database_dirs))
+					$this->rollbackDatabase($this->database_host, $this->generateClusterDirname($this->database_host, $this->remote_dir));
+
+				// de caches resetten
+				foreach ($this->remote_host as $key => $remote_host)
+				{
+					$remote_dir = $this->generateClusterDirname($key, $this->remote_dir);
+
+					$this->clearRemoteCaches($remote_host, $remote_dir, $this->previous_remote_target_dir);
+					$this->postRollback($remote_host, $remote_dir, $this->previous_remote_target_dir);
+				}
+
+				// als laatste de nieuwe directory terugdraaien
+				foreach ($this->remote_host as $key => $remote_host)
+				{
+					$remote_dir = $this->generateClusterDirname($key, $this->remote_dir);
+
+					$this->rollbackFiles($remote_host, $remote_dir, $this->last_remote_target_dir);
 				}
 			}
 			else
 			{
-				$this->preRollback($this->remote_host, $this->remote_dir);
-				$this->rollbackSymlink();
-				$this->rollbackDatabase();
-				$this->rollbackFiles();
-				$this->postRollback($this->remote_host, $this->remote_dir);
-				$this->clearRemoteCaches($this->remote_host);
+				$this->preRollback($this->remote_host, $this->remote_dir, $this->previous_remote_target_dir);
+				$this->changeSymlink($this->remote_host, $this->remote_dir, $this->previous_remote_target_dir);
+
+				if (!empty($this->database_dirs))
+					$this->rollbackDatabase($this->database_host, $this->remote_dir);
+
+				$this->clearRemoteCaches($this->remote_host, $this->remote_dir, $this->previous_remote_target_dir);
+				$this->postRollback($this->remote_host, $this->remote_dir, $this->previous_remote_target_dir);
+				$this->rollbackFiles($this->remote_host, $this->remote_dir, $this->last_remote_target_dir);
 			}
 		}
 		else
 		{
-			$this->log('Rollback onmogelijk, geen vorige versie gevonden');
+			$this->log('Rollback impossible, no previous deployment found !');
 		}
 	}
 
-	protected function clearRemoteCaches($remote_host)
+	/**
+	 * Verwijdert oude deployment directories
+	 */
+	public function cleanup()
+	{
+		$this->log('cleanup', 2);
+
+		$past_deployments = array();
+
+		if (is_array($this->remote_host))
+		{
+			foreach ($this->remote_host as $key => $remote_host)
+			{
+				$remote_dir = $this->generateClusterDirname($key, $this->remote_dir);
+
+				if ($past_dirs = $this->collectPastDeployments($remote_host, $remote_dir))
+				{
+					$past_deployments[] = array(
+						'remote_host' => $remote_host,
+						'remote_dir' => $remote_dir,
+						'dirs' => $past_dirs
+					);
+				}
+			}
+		}
+		else
+		{
+			if ($past_dirs = $this->collectPastDeployments($this->remote_host, $this->remote_dir))
+			{
+				$past_deployments[] = array(
+					'remote_host' => $this->remote_host,
+					'remote_dir' => $this->remote_dir,
+					'dirs' => $past_dirs
+				);
+			}
+		}
+
+		if (!empty($past_deployments)) {
+			if ($this->inputPrompt('Delete old directories? (yes/no): ', 'no') == 'yes')
+				$this->deletePastDeployments($past_deployments);
+		}
+		else {
+			$this->log('No cleanup needed');
+		}
+	}
+
+
+	protected function generateClusterDirname($key, $remote_dir)
+	{
+		return $key == 0 ? $remote_dir : str_replace('clustermaster', 'clusternode', $remote_dir);
+	}
+
+	protected function clearRemoteCaches($remote_host, $remote_dir, $target_dir)
 	{
 		$this->sshExec($remote_host, $this->clear_cache_cmd, $output, $return);
 
@@ -523,7 +631,7 @@ class BaseDeploy
 
 		if ($this->last_remote_target_dir)
 		{
-			$this->rsyncExec($this->rsync_path .' -vazcO --force --dry-run --delete --progress '. $this->prepareExcludes() .' ./ '. $this->remote_user .'@'. $remote_host .':'. $remote_dir .'/'. $this->last_remote_target_dir, 'Rsync check is mislukt');
+			$this->rsyncExec($this->rsync_path .' -azcO --force --dry-run --delete --progress '. $this->prepareExcludes() .' ./ '. $this->remote_user .'@'. $remote_host .':'. $remote_dir .'/'. $this->last_remote_target_dir, 'Rsync check is mislukt');
 		}
 		else
 		{
@@ -534,30 +642,24 @@ class BaseDeploy
 	/**
 	 * Uploadt files naar een nieuwe directory op de live server
 	 */
-	protected function updateFiles($remote_host = null, $remote_dir = null)
+	protected function updateFiles($remote_host, $remote_dir, $target_dir)
 	{
 		$this->log('updateFiles', 2);
 
-		if ($remote_host === null)
-			$remote_host = $this->remote_host;
+		$this->rsyncExec($this->rsync_path .' -azcO --force --delete --progress '. $this->prepareExcludes() .' '. $this->prepareLinkDest($remote_dir) .' ./ '. $this->remote_user .'@'. $remote_host .':'. $remote_dir .'/'. $target_dir);
 
-		if ($remote_dir === null)
-			$remote_dir = $this->remote_dir;
-
-		$this->rsyncExec($this->rsync_path .' -vazcO --force --delete --progress '. $this->prepareExcludes() .' '. $this->prepareLinkDest($remote_dir) .' ./ '. $this->remote_user .'@'. $remote_host .':'. $remote_dir .'/'. $this->remote_target_dir);
-
-		$this->fixDatadirSymlinks($remote_host, $remote_dir);
+		$this->fixDatadirSymlinks($remote_host, $remote_dir, $target_dir);
 
 		$this->renameTargetFiles($remote_host, $remote_dir);
 	}
 
-	protected function fixDatadirSymlinks($remote_host, $remote_dir)
+	protected function fixDatadirSymlinks($remote_host, $remote_dir, $target_dir)
 	{
 		$this->log('fixDatadirSymlinks', 2);
 
 		if (!empty($this->data_dirs))
 		{
-			$cmd = "cd $remote_dir/{$this->remote_target_dir}; php {$this->datadir_patcher} --datadir-prefix={$this->data_dir_prefix} --previous-dir={$this->last_remote_target_dir} ". implode(' ', $this->data_dirs);
+			$cmd = "cd $remote_dir/{$target_dir}; php {$this->datadir_patcher} --datadir-prefix={$this->data_dir_prefix} --previous-dir={$this->last_remote_target_dir} ". implode(' ', $this->data_dirs);
 
 			$output = array();
 			$return = null;
@@ -568,57 +670,52 @@ class BaseDeploy
 	}
 
 	/**
-	 * Verwijderd de laatst geuploadde directory
+	 * Gearman workers herstarten
 	 */
-	protected function rollbackFiles($remote_host = null, $remote_dir = null)
+	protected function restartGearmanWorkers($remote_host, $remote_dir, $target_dir)
+	{
+		if (isset($this->gearman['workers']) && !empty($this->gearman['workers'])) {
+
+			foreach ($this->gearman['servers'] as $server) {
+
+				foreach ($this->gearman['workers'] as $worker) {
+
+					$worker = sprintf($worker, $this->target);
+
+					$cmd = "cd $remote_dir/{$target_dir}; php {$this->gearman_restarter} --ip={$server['ip']} --port={$server['port']} --function=$worker";
+
+					$this->log("restartGearmanWorkers($remote_host, $remote_dir, $target_dir): $cmd", 2);
+
+					$output = array();
+					$return = null;
+					$this->sshExec($remote_host, $cmd, $output, $return);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Verwijdert de laatst geuploadde directory
+	 */
+	protected function rollbackFiles($remote_host, $remote_dir, $target_dir)
 	{
 		$this->log('rollbackFiles', 2);
 
-		if ($remote_host === null)
-			$remote_host = $this->remote_host;
-
-		if ($remote_dir === null)
-			$remote_dir = $this->remote_dir;
-
 		$output = array();
 		$return = null;
-		$this->sshExec($remote_host, 'cd '. $remote_dir .'; rm -rf '. $this->last_remote_target_dir, $output, $return);
+		$this->sshExec($remote_host, 'cd '. $remote_dir .'; rm -rf '. $target_dir, $output, $return);
 	}
 
 	/**
-	 * Update de production-symlink naar de nieuwe upload directory
+	 * Update de production-symlink naar de nieuwe (of oude, bij rollback) upload directory
 	 */
-	protected function updateSymlink($remote_host = null, $remote_dir = null)
+	protected function changeSymlink($remote_host, $remote_dir, $target_dir)
 	{
-		$this->log('updateSymlink', 2);
-
-		if ($remote_host === null)
-			$remote_host = $this->remote_host;
-
-		if ($remote_dir === null)
-			$remote_dir = $this->remote_dir;
+		$this->log('changeSymlink', 2);
 
 		$output = array();
 		$return = null;
-		$this->sshExec($remote_host, "cd $remote_dir; rm production; ln -s {$this->remote_target_dir} production", $output, $return);
-	}
-
-	/**
-	 * Zet de production-symlink terug naar de vorige upload directory
-	 */
-	protected function rollbackSymlink($remote_host = null, $remote_dir = null)
-	{
-		$this->log('rollbackSymlink', 2);
-
-		if ($remote_host === null)
-			$remote_host = $this->remote_host;
-
-		if ($remote_dir === null)
-			$remote_dir = $this->remote_dir;
-
-		$output = array();
-		$return = null;
-		$this->sshExec($remote_host, "cd $remote_dir; rm production; ln -s {$this->previous_remote_target_dir} production", $output, $return);
+		$this->sshExec($remote_host, "cd $remote_dir; rm production; ln -s {$target_dir} production", $output, $return);
 	}
 
 	/**
@@ -627,12 +724,9 @@ class BaseDeploy
 	 * @param string $database_host
 	 * @param string $action 			update of rollback
 	 */
-	protected function checkDatabase($database_host = null, $action)
+	protected function checkDatabase($database_host, $action)
 	{
 		$this->log('checkDatabase', 2);
-
-		if ($database_host === null)
-			$database_host = $this->database_host;
 
 		if ($action == 'update')
 			$files = $this->findSQLFilesForPeriod($this->last_timestamp, $this->timestamp);
@@ -661,16 +755,13 @@ class BaseDeploy
 
 	/**
 	 * Voert database migraties uit voor de nieuwste upload
+	 *
+	 * @param string $database_host
+	 * @param string $remote_dir
 	 */
-	protected function updateDatabase($database_host = null, $remote_dir = null)
+	protected function updateDatabase($database_host, $remote_dir, $target_dir)
 	{
 		$this->log('updateDatabase', 2);
-
-		if ($database_host === null)
-			$database_host = $this->database_host;
-
-		if ($remote_dir === null)
-			$remote_dir = $this->remote_dir;
 
 		if (!($files = $this->findSQLFilesForPeriod($this->last_timestamp, $this->timestamp)))
 		{
@@ -687,22 +778,18 @@ class BaseDeploy
 
 			$this->getDatabaseLogin($database_host);
 
-			$this->sendToDatabase($database_host, "cd $remote_dir/{$this->remote_target_dir}; php {$this->database_patcher} update ". implode(' ', $files), $output, $return);
+			$this->sendToDatabase($database_host, "cd $remote_dir/{$target_dir}; php {$this->database_patcher} update ". implode(' ', $files), $output, $return, $this->database_name, $this->database_user, $this->database_pass);
 		}
 	}
 
 	/**
 	 * Draait database migraties terug naar de vorige upload
+	 *
+	 * @param string $database_host
 	 */
-	protected function rollbackDatabase($database_host = null)
+	protected function rollbackDatabase($database_host, $remote_dir)
 	{
 		$this->log('rollbackDatabase', 2);
-
-		if ($database_host === null)
-			$database_host = $this->database_host;
-
-		if ($remote_dir === null)
-			$remote_dir = $this->remote_dir;
 
 		if (!($files = $this->findSQLFilesForPeriod($this->last_timestamp, $this->previous_timestamp)))
 		{
@@ -719,7 +806,7 @@ class BaseDeploy
 
 			$this->getDatabaseLogin($database_host);
 
-			$this->sendToDatabase($database_host, "cd $remote_dir/{$this->last_remote_target_dir}; php {$this->database_patcher} rollback ". implode(' ', $files), $output, $return);
+			$this->sendToDatabase($database_host, "cd $remote_dir/{$this->last_remote_target_dir}; php {$this->database_patcher} rollback ". implode(' ', $files), $output, $return, $this->database_name, $this->database_user, $this->database_pass);
 		}
 	}
 
@@ -733,7 +820,9 @@ class BaseDeploy
 			foreach ($files_to_move as $newpath => $currentpath)
 				$target_files_to_move .= "mv $currentpath $newpath; ";
 
-			$this->sshExec($remote_host, "cd {$remote_dir}/{$this->remote_target_dir}; $target_files_to_move");
+			$output = array();
+			$return = null;
+			$this->sshExec($remote_host, "cd {$remote_dir}/{$this->remote_target_dir}; $target_files_to_move", $output, $return);
 		}
 	}
 
@@ -801,7 +890,7 @@ class BaseDeploy
 	}
 
 	/**
-	 * Controleert of alle opgegeven bestanden bestaan
+	 * Controleert of alle opgegeven bestanden bestaan en de juist class en sql code bevatten
 	 *
 	 * @param string $update		update of rollback
 	 * @param array $filenames
@@ -830,6 +919,16 @@ class BaseDeploy
 			if (!$sql instanceof SQL_update)
 				throw new DeployException("Class $classname doesn't implement SQL_update");
 
+			$up_sql = trim($sql->up());
+
+			if ($up_sql != '' && substr($up_sql, -1) != ';')
+				throw new DeployException("$classname up() code doesn't end with ';'");
+
+			$down_sql = trim($sql->down());
+
+			if ($down_sql != '' && substr($down_sql, -1) != ';')
+				throw new DeployException("$classname down() code doesn't end with ';'");
+
 			$classes[] = $sql;
 		}
 
@@ -841,52 +940,68 @@ class BaseDeploy
 		if ($this->database_checked)
 			return;
 
-		$database_name = $this->database_name !== null ? $this->database_name : self::inputPrompt('Database: ');
-		$username = $this->database_user !== null ? $this->database_user : self::inputPrompt('Database username [root]: ', 'root');
-		$password = $this->database_pass !== null ? $this->database_pass : self::inputPrompt('Database password: ', '', true);
+		if ($this->database_name !== null) {
+			$database_name = self::inputPrompt('Database ('. $this->database_name .') [skip]: ', 'skip');
+		} else {
+			$database_name = self::inputPrompt('Database [skip]: ', 'skip');
+		}
 
-		// controleren of deze gebruiker een tabel mag aanmaken (rudimentaire toegangstest)
-		$this->databaseExec($database_host, "CREATE TABLE temp_{$this->timestamp} (field1 INT NULL); DROP TABLE temp_{$this->timestamp};", $output, $return, $database_name, $username, $password);
+		if ($database_name == 'skip') {
+			$username = '';
+			$password = '';
 
-		if ($return != 0)
-			return $this->getDatabaseLogin($database_host);
+			$this->log('database skipped');
+		}
+		else {
+			$username = $this->database_user !== null ? $this->database_user : self::inputPrompt('Database username [root]: ', 'root');
+			$password = $this->database_pass !== null ? $this->database_pass : self::inputPrompt('Database password: ', '', true);
 
-		$this->log('database check passed');
+			// controleren of deze gebruiker een tabel mag aanmaken (rudimentaire toegangstest)
+			$this->sendToDatabase($database_host, "echo '". addslashes("CREATE TABLE temp_{$this->timestamp} (field1 INT NULL); DROP TABLE temp_{$this->timestamp};") ."'", $output, $return, $database_name, $username, $password);
+
+			if ($return != 0)
+				return $this->getDatabaseLogin($database_host);
+
+			$this->log('database check passed');
+		}
+
 		$this->database_checked = true;
 		$this->database_name = $database_name;
 		$this->database_user = $username;
 		$this->database_pass = $password;
 	}
 
-	protected function databaseExec($database_host, $command, &$output, &$return, $database_name = null, $username = null, $password = null)
+    /**
+     * Stuurt een query naar de database.
+     *
+     * @param string $database_host
+     * @param string $command
+     * @param array $output
+     * @param integer $return
+     * @param string $database_name
+     * @param string $username
+     * @param string $password
+     */
+    protected function sendToDatabase($database_host, $command, &$output, &$return, $database_name, $username, $password)
 	{
-		$this->sendToDatabase($database_host, "echo '". addslashes($command) ."'", $output, $return, $database_name, $username, $password);
-	}
-
-	protected function sendToDatabase($database_host, $command, &$output, &$return, $database_name = null, $username = null, $password = null)
-	{
-		if ($database_name === null)
-			$database_name = $this->database_name;
-
-		if ($username === null)
-			$username = $this->database_user;
-
-		if ($password === null)
-			$password = $this->database_pass;
+		if ($this->database_checked && $this->database_name == 'skip')
+			return;
 
 		$output = array();
 		$return = null;
 		$this->sshExec($database_host, "$command | mysql -u$username -p$password $database_name", $output, $return, '/ mysql -u([^ ]+) -p[^ ]+ /', ' mysql -u$1 -p***** ');
 	}
 
-	/**
-	 * Maakt een lijstje van alle SQL update files die binnen het timeframe vallen, in de volgorde die de start- en endtime impliceren.
-	 * Als de starttime *voor* de endtime ligt is het een gewone update cyclus en worden de files chronologisch gerangschikt.
-	 * Als de starttime *na* de endtime ligt is het een rollback en worden de files van nieuw naar oud gerangschikt.
-	 *
-	 * @param timestamp $starttime
-	 * @param timestamp $endtime
-	 */
+    /**
+     * Maakt een lijstje van alle SQL update files die binnen het timeframe vallen, in de volgorde die de start- en endtime impliceren.
+     * Als de starttime *voor* de endtime ligt is het een gewone update cyclus en worden de files chronologisch gerangschikt.
+     * Als de starttime *na* de endtime ligt is het een rollback en worden de files van nieuw naar oud gerangschikt.
+     *
+     * @param integer $starttime (timestamp)
+     * @param integer $endtime (timestamp)
+     * @throws DeployException
+     * @return array
+     */
 	public function findSQLFilesForPeriod($starttime, $endtime)
 	{
 		$this->log('findSQLFilesForPeriod('. date('Y-m-d H:i:s', $starttime) .','. date('Y-m-d H:i:s', $endtime) .')', 2);
@@ -1027,7 +1142,9 @@ class BaseDeploy
 
 		if (!empty($this->data_dirs))
 		{
-			$cmd = "mkdir -v -m 0775 -p $remote_dir/{$this->data_dir_prefix}/{". implode(',', $this->data_dirs) ."}";
+			$data_dirs = count($this->data_dirs) > 1 ? '{'. implode(',', $this->data_dirs) .'}' : implode(',', $this->data_dirs);
+
+			$cmd = "mkdir -v -m 0775 -p $remote_dir/{$this->data_dir_prefix}/$data_dirs";
 
 			$output = array();
 			$return = null;
@@ -1051,9 +1168,7 @@ class BaseDeploy
 
 		$dirs = array();
 		$return = null;
-		$this->sshExec($remote_host, "ls -1 $remote_dir", $dirs, $return); // | grep '{$this->project_name}_'
-
-		$this->log($dirs);
+		$this->sshExec($remote_host, "ls -1 $remote_dir", $dirs, $return);
 
 		if ($return !== 0) {
 			throw new DeployException('ssh initialize failed');
@@ -1080,7 +1195,9 @@ class BaseDeploy
 			{
 				sort($deployment_timestamps);
 
-				if ($count > 1)
+				$this->log($dirs);
+
+				if ($count >= 2)
 					return array_slice($deployment_timestamps, -2);
 
 				return array(null, array_pop($deployment_timestamps));
@@ -1091,12 +1208,110 @@ class BaseDeploy
 	}
 
 	/**
+	 * Geeft een array terug van alle oude deployments die verwijderd mogen worden.
+	 *
+	 * @returns array
+	 */
+	protected function collectPastDeployments($remote_host, $remote_dir)
+	{
+		$this->log('collectPastDeployments', 2);
+
+		$dirs = array();
+		$return = null;
+		$this->sshExec($remote_host, "ls -1 $remote_dir", $dirs, $return);
+
+		if ($return !== 0) {
+			throw new DeployException('ssh initialize failed');
+		}
+
+		if (count($dirs))
+		{
+			$deployment_dirs = array();
+
+			foreach ($dirs as $dirname)
+			{
+				if (preg_match('/'. preg_quote($this->project_name) .'_\d{4}-\d{2}-\d{2}_\d{6}/', $dirname))
+				{
+					$deployment_dirs[] = $dirname;
+				}
+			}
+
+			// de laatste twee deployments blijven altijd staan
+			if (count($deployment_dirs) > 2)
+			{
+				$dirs_to_delete = array();
+
+				sort($deployment_dirs);
+
+				$deployment_dirs = array_slice($deployment_dirs, 0, -2);
+
+				foreach ($deployment_dirs as $key => $dirname)
+				{
+					$time = strtotime(str_replace(array($this->project_name .'_', '_'), array('', ' '), $dirname));
+
+					// alles ouder dan een maand mag sowieso weg
+					if ($time < strtotime('-1 month')) {
+						$this->log("$dirname is ouder dan een maand");
+
+						$dirs_to_delete[] = $dirname;
+					}
+
+					// alles ouder dan een week alleen de laatste van de dag bewaren
+					elseif ($time < strtotime('-1 week'))
+					{
+						if (isset($deployment_dirs[$key+1]))
+						{
+							$time_next = strtotime(str_replace(array($this->project_name .'_', '_'), array('', ' '), $deployment_dirs[$key+1]));
+
+							// als de volgende deployment op dezelfde dag was kan deze weg
+							if (date('j', $time_next) == date('j', $time))
+							{
+								$this->log("$dirname werd opgevolgd diezelfde dag");
+
+								$dirs_to_delete[] = $dirname;
+							}
+							else
+							{
+								$this->log("$dirname blijft staan");
+							}
+						}
+					}
+
+					else
+					{
+						$this->log("$dirname blijft staan");
+					}
+				}
+
+				return $dirs_to_delete;
+			}
+		}
+	}
+
+	/**
+	 * Voert de verwijdering van collectPastDeployments resultaten uit
+	 *
+	 * @param array $past_deployments
+	 */
+	protected function deletePastDeployments($past_deployments)
+	{
+		foreach ($past_deployments as $past_deployment)
+		{
+			foreach ($past_deployment['dirs'] as $dir)
+			{
+				$this->rollbackFiles($past_deployment['remote_host'], $past_deployment['remote_dir'], $dir);
+			}
+		}
+	}
+
+	/**
 	 * Wrapper voor SSH commando's
 	 *
+	 * @param string $remote_host
 	 * @param string $command
-	 * @param string $output
+	 * @param array $output
 	 * @param int $return
-	 * @param string $hide_pattern		Regexp waarmee de output kan worden gekuisd
+	 * @param string $hide_pattern		Regex waarmee de output kan worden gekuisd (voor wachtwoorden bv.)
 	 * @param string $hide_replacement
 	 */
 	protected function sshExec($remote_host, $command, &$output, &$return, $hide_pattern = '', $hide_replacement = '')
@@ -1113,12 +1328,13 @@ class BaseDeploy
 		exec($cmd, $output, $return);
 	}
 
-	/**
-	 * Wrapper voor rsync commando's
-	 *
-	 * @param string $command
-	 * @param string $error_msg
-	 */
+    /**
+     * Wrapper voor rsync commando's
+     *
+     * @param string $command
+     * @param string $error_msg
+     * @throws DeployException
+     */
 	protected function rsyncExec($command, $error_msg = 'Rsync is mislukt')
 	{
 		$this->log('execRSync: '. $command, 2);
@@ -1163,33 +1379,37 @@ class BaseDeploy
 	/**
 	 * Stub methode voor extra uitbreidingen die *voor* deploy worden uitgevoerd
 	 */
-	protected function preDeploy($remote_host = null, $remote_dir = null)
+	protected function preDeploy($remote_host, $remote_dir, $target_dir)
 	{
-		$this->log("preDeploy($remote_host, $remote_dir): $command", 2);
+		$this->log("preDeploy($remote_host, $remote_dir, $target_dir)", 2);
 	}
 
 	/**
-	 * Stub methode voor extra uitbreidingen die *na* deploy worden uitgevoerd
+	 * Stub methode voor extra uitbreidingen die *na* deploy worden uitgevoerd en *voor* de cache clears
 	 */
-	protected function postDeploy($remote_host = null, $remote_dir = null)
+	protected function postDeploy($remote_host, $remote_dir, $target_dir)
 	{
-		$this->log("postDeploy($remote_host, $remote_dir): $command", 2);
+		$this->log("postDeploy($remote_host, $remote_dir, $target_dir)", 2);
+
+		$this->restartGearmanWorkers($remote_host, $remote_dir, $target_dir);
 	}
 
 	/**
 	 * Stub methode voor extra uitbreidingen die *voor* rollback worden uitgevoerd
 	 */
-	protected function preRollback($remote_host = null, $remote_dir = null)
+	protected function preRollback($remote_host, $remote_dir, $target_dir)
 	{
-		$this->log("preRollback($remote_host, $remote_dir): $command", 2);
+		$this->log("preRollback($remote_host, $remote_dir, $target_dir)", 2);
 	}
 
 	/**
 	 * Stub methode voor extra uitbreidingen die *na* rollback worden uitgevoerd
 	 */
-	protected function postRollback($remote_host = null, $remote_dir = null)
+	protected function postRollback($remote_host, $remote_dir, $target_dir)
 	{
-		$this->log("postRollback($remote_host, $remote_dir): $command", 2);
+		$this->log("postRollback($remote_host, $remote_dir, $target_dir)", 2);
+
+		$this->restartGearmanWorkers($remote_host, $remote_dir, $target_dir);
 	}
 
 	/**
