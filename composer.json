@@ -1,4 +1,13 @@
 {
     "name": "bugbyte/deployer",
-    "version": "1.0.0-dev"
+    "version": "1.0.0-dev",
+    "authors": {
+        "name": "Bert-Jan de Lange",
+        "email": "bert-jan@bugbyte.nl"
+    }
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0-dev"
+        }
+    }
 }
