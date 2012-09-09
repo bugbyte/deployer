@@ -1,8 +1,6 @@
 <?php
 
 /**
- * Stub class om de standaard deployment uit te kunnen breiden met codebase- of project-specifieke functionaliteit
- *
- * @author Bert-Jan de Lange <bert-jan@bugbyte.nl>
+ * Stub class. Overload this to expand the deployer with project-specific functionality
  */
 class Deploy extends BaseDeploy {}

@@ -1,9 +1,7 @@
 <?php
 
 /**
- * Standaard deployment functionaliteit
- *
- * @author Bert-Jan de Lange <bert-jan@bugbyte.nl>
+ * The deployer
  */
 class BaseDeploy
 {
@@ -240,31 +238,6 @@ class BaseDeploy
 	protected $gearman = array();
 
 	/**
-	 * Files die specifiek zijn per clusterrol (master/node)
-	 *
-	 * voorbeeld:
-	 * 		'config/databases.yml'
-	 *
-	 * bij publicatie naar een cluster master:
-	 * 		'config/databases.master.yml' => 'config/databases.yml'
-	 *
-	 * bij publicatie naar een cluster node:
-	 * 		'config/databases.node.yml' => 'config/databases.yml'
-	 *
-	 * *** LET OP ***
-	 * target_specific_files en cluster_specific files worden in die volgorde uitgevoerd en een file
-	 * kan dus 2x hernoemd worden. Hernoemen gebeurd met extensie erbij en werkt dus van buiten naar binnen.
-	 * Je kan dus hebben:
-	 * 		'config/databases.master.prod.yml' => 'config/databases.master.yml' => 'config/databases.yml'
-	 * Maar niet:
-	 * 		'config/databases.stage.node.yml' => ...
-	 *
-	 *
-	 * @var array
-	 */
-	protected $cluster_specific_files = array();
-
-	/**
 	 * Cache voor listFilesToRename()
 	 *
 	 * @var array
@@ -335,9 +308,6 @@ class BaseDeploy
 
 		if (isset($options['gearman']))
 			$this->gearman = $options['gearman'];
-
-		if (isset($options['cluster_specific_files']))
-			$this->cluster_specific_files = $options['cluster_specific_files'];
 
 		$this->rsync_path		= isset($options['rsync_path']) ? $options['rsync_path'] : trim(`which rsync`);
 		$this->ssh_path			= isset($options['ssh_path']) ? $options['ssh_path'] : trim(`which ssh`);
@@ -838,18 +808,6 @@ class BaseDeploy
 			$cluster_role = (strpos($remote_dir, 'clustermaster') !== false) ? 'master' : ((strpos($remote_dir, 'clusternode') !== false) ? 'node' : '');
 
 			$target_files_to_move = array();
-
-			// clusterrol-specifieke files hernoemen
-			if (!empty($this->cluster_specific_files))
-			{
-				foreach ($this->cluster_specific_files as $filepath)
-				{
-					$ext = pathinfo($filepath, PATHINFO_EXTENSION);
-					$target_filepath = str_replace(".$ext", ".{$cluster_role}.$ext", $filepath);
-
-					$target_files_to_move[$filepath] = $target_filepath;
-				}
-			}
 
 			// doelspecifieke files hernoemen
 			if (!empty($this->target_specific_files))
