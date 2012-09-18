@@ -15,7 +15,12 @@ $deploy = new Deploy(array(
 	'database_name' => 'database',
 	'database_user' => 'root',
 	'target' => 'prod',
-	'database-patcher'	=> 'lib/deploy/database-patcher.php'
+	'database-patcher'	=> 'lib/deployer/database-patcher.php',
+
+    // APC cache handling
+    'apc_deploy_version_template' => 'lib/deployer/apc/deploy_version_template.php',
+    'apc_deploy_version_path' => '/home/user/deploy_version.php',
+    'apc_deploy_setrev_url' => 'localhost/deployer/apc/setrev.php'
 ));
 
 switch($_SERVER['argv'][1])

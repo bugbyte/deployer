@@ -245,11 +245,25 @@ class BaseDeploy
 	protected $files_to_rename = array();
 
 	/**
-	 * Met dit commando worden APC caches op de remote hosts geleegd (zowel resp. apache/mod_php als nginx/php-fpm)
+	 * The project path where the deploy_timestamp.php template is located
 	 *
 	 * @var string
 	 */
-	protected $clear_cache_cmd = 'curl -s -S localhost/clear_apc.php';
+	protected $apc_deploy_timestamp_template = null;
+
+	/**
+	 * The absolute physical path where the deploy_timestamp.php should be placed (on the remote server)
+	 *
+	 * @var string
+	 */
+	protected $apc_deploy_timestamp_path = null;
+
+	/**
+	 * The local url (on the remote server) where setrev.php can be reached
+	 *
+	 * @var string
+	 */
+	protected $apc_deploy_setrev_url = null;
 
 	/**
 	 * Programma paden
@@ -309,6 +323,12 @@ class BaseDeploy
 		if (isset($options['gearman']))
 			$this->gearman = $options['gearman'];
 
+		if (isset($options['apc_deploy_version_template']) && isset($options['apc_deploy_version_path']) && isset($options['apc_deploy_setrev_url'])) {
+			$this->apc_deploy_version_template = $options['apc_deploy_version_template'];
+			$this->apc_deploy_version_path = $options['apc_deploy_version_path'];
+			$this->apc_deploy_setrev_url = $options['apc_deploy_setrev_url'];
+        }
+
 		$this->rsync_path		= isset($options['rsync_path']) ? $options['rsync_path'] : trim(`which rsync`);
 		$this->ssh_path			= isset($options['ssh_path']) ? $options['ssh_path'] : trim(`which ssh`);
 
@@ -350,7 +370,8 @@ class BaseDeploy
 	 * Draait een dry-run naar de remote server om de gewijzigde bestanden te tonen
 	 *
 	 * @param string $action 		update of rollback
-	 */
+     * @return bool
+     */
 	protected function check($action)
 	{
 		$this->log('check', 2);
@@ -370,6 +391,12 @@ class BaseDeploy
 
 		if (!empty($this->database_dirs))
 			$this->checkDatabase($this->database_host, $action);
+
+        if ($this->apc_deploy_version_template) {
+            if (!file_exists($this->apc_deploy_version_template)) {
+                throw new DeployException("{$this->apc_deploy_version_template} does not exist.");
+            }
+        }
 
 		if ($action == 'update')
 		{
@@ -570,20 +597,34 @@ class BaseDeploy
 		}
 	}
 
-
 	protected function generateClusterDirname($key, $remote_dir)
 	{
 		return $key == 0 ? $remote_dir : str_replace('clustermaster', 'clusternode', $remote_dir);
 	}
 
-	protected function clearRemoteCaches($remote_host, $remote_dir, $target_dir)
+    /**
+     * @param string $remote_host
+     * @param string $remote_dir
+     * @param string $target_dir
+     */
+    protected function clearRemoteCaches($remote_host, $remote_dir, $target_dir)
 	{
-		$this->sshExec($remote_host, $this->clear_cache_cmd, $output, $return);
+        if ($this->apc_deploy_version_template && $this->apc_deploy_version_path && $this->apc_deploy_setrev_url) {
+            $output = array();
+            $return = null;
+            $this->sshExec($remote_host,
+                    "cd $remote_dir/$target_dir; ".
+                    "cp {$this->apc_deploy_version_template} {$this->apc_deploy_version_path}.tmp; ".
+                    "sed -i 's/#deployment_timestamp#/{$this->timestamp}/' {$this->apc_deploy_version_path}.tmp; ".
+                    "mv {$this->apc_deploy_version_path}.tmp {$this->apc_deploy_version_path}; ".
+                    "curl -s -S {$this->apc_deploy_setrev_url}?rev={$this->timestamp}",
+                $output, $return);
 
-		$this->log($output);
+            $this->log($output);
 
-		if ($return != 0)
-			$this->log("$remote_host: Clear cache failed");
+            if ($return != 0)
+                $this->log("$remote_host: Clear cache failed");
+        }
 	}
 
 	/**
@@ -752,11 +793,12 @@ class BaseDeploy
 		}
 	}
 
-	/**
-	 * Draait database migraties terug naar de vorige upload
-	 *
-	 * @param string $database_host
-	 */
+    /**
+     * Reverts database migrations to the previous deployment
+     *
+     * @param string $database_host
+     * @param string $remote_dir
+     */
 	protected function rollbackDatabase($database_host, $remote_dir)
 	{
 		$this->log('rollbackDatabase', 2);
@@ -780,7 +822,11 @@ class BaseDeploy
 		}
 	}
 
-	protected function renameTargetFiles($remote_host, $remote_dir)
+    /**
+     * @param string $remote_host
+     * @param string $remote_dir
+     */
+    protected function renameTargetFiles($remote_host, $remote_dir)
 	{
 		if ($files_to_move = $this->listFilesToRename($remote_host, $remote_dir))
 		{
@@ -796,11 +842,14 @@ class BaseDeploy
 		}
 	}
 
-	/**
-	 * Maakt een lijst van de files die specifiek zijn voor een clusterrol of doel en op de doelserver hernoemd moeten worden
-	 *
-	 * @return array
-	 */
+    /**
+     * Maakt een lijst van de files die specifiek zijn voor een clusterrol of doel en op de doelserver hernoemd moeten worden
+     *
+     * @param string $remote_host
+     * @param string $remote_dir
+     * @throws DeployException
+     * @return array
+     */
 	protected function listFilesToRename($remote_host, $remote_dir)
 	{
 		if (!isset($this->files_to_rename["$remote_host-$remote_dir"]))
