@@ -1,6 +1,6 @@
 {
     "name": "bugbyte/deployer",
-    "version": "1.0.0-dev",
+    "version": "1.0.0",
     "authors": [
         {
             "name": "Bert-Jan de Lange",
@@ -9,7 +9,7 @@
     ],
     "extra": {
         "branch-alias": {
-            "dev-master": "1.0-dev"
+            "dev-master": "1.0"
         }
     }
 }
