@@ -7,8 +7,7 @@ The easiest way is to use Composer:
     {
         "require": {
             "bugbyte/deployer": "1.0.*"
-        },
-        "minimum-stability": "dev"
+        }
     }
 
 USAGE
