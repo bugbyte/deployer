@@ -6,6 +6,11 @@
             "email": "bert-jan@bugbyte.nl"
         }
     ],
+    "description": "A website deployment tool",
+    "license": "MIT",
+    "autoload": {
+        "classmap": ["lib/"]
+    }
     "extra": {
         "branch-alias": {
             "dev-master": "1.0"
