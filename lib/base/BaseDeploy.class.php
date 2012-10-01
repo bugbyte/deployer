@@ -695,7 +695,7 @@ class BaseDeploy
 
 					$cmd = "cd $remote_dir/{$target_dir}; php {$this->gearman_restarter} --ip={$server['ip']} --port={$server['port']} --function=$worker";
 
-					$this->log("restartGearmanWorkers($remote_host, $remote_dir, $target_dir): $cmd", 2);
+					$this->log("restartGearmanWorkers($remote_host, $remote_dir, $target_dir)", 2);
 
 					$output = array();
 					$return = null;
@@ -789,7 +789,9 @@ class BaseDeploy
 
 			$this->getDatabaseLogin($database_host);
 
-			$this->sendToDatabase($database_host, "cd $remote_dir/{$target_dir}; php {$this->database_patcher} update ". implode(' ', $files), $output, $return, $this->database_name, $this->database_user, $this->database_pass);
+            $output = array();
+            $return = null;
+			$this->sendToDatabase($database_host, "cd $remote_dir/{$target_dir}; php {$this->database_patcher} update {$this->database_name} ". implode(' ', $files), $output, $return, $this->database_name, $this->database_user, $this->database_pass);
 		}
 	}
 
