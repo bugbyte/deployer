@@ -393,7 +393,8 @@ class BaseDeploy
 		if (!empty($this->database_dirs))
 			$this->checkDatabase($this->database_host, $action);
 
-        if ($this->apc_deploy_version_template) {
+		// only if all APC settings are present they are actually used
+		if ($this->apc_deploy_version_template && $this->apc_deploy_timestamp_path && $this->apc_deploy_setrev_url) {
             if (!file_exists($this->apc_deploy_version_template)) {
                 throw new DeployException("{$this->apc_deploy_version_template} does not exist.");
             }
