@@ -1315,10 +1315,7 @@ class BaseDeploy
 	{
 		foreach ($past_deployments as $past_deployment)
 		{
-			foreach ($past_deployment['dirs'] as $dir)
-			{
-				$this->rollbackFiles($past_deployment['remote_host'], $past_deployment['remote_dir'], $dir);
-			}
+            $this->rollbackFiles($past_deployment['remote_host'], $past_deployment['remote_dir'], implode(' ', $past_deployment['dirs']));
 		}
 	}
 
