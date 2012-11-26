@@ -391,7 +391,7 @@ class BaseDeploy
 			$this->checkFiles(is_array($this->remote_host) ? $this->remote_host[0] : $this->remote_host, $this->remote_dir, $this->last_remote_target_dir);
 
 		if (!empty($this->database_dirs))
-			$this->checkDatabase($this->database_host, $action);
+			$this->checkDatabase($this->remote_host, $this->database_host, $action);
 
         if ($this->apc_deploy_version_template) {
             if (!file_exists($this->apc_deploy_version_template)) {
@@ -456,7 +456,7 @@ class BaseDeploy
 
 			// na de uploads de database prepareren
 			if (!empty($this->database_dirs))
-				$this->updateDatabase($this->database_host, $this->remote_dir, $this->remote_target_dir);
+				$this->updateDatabase($this->remote_host[0], $this->database_host, $this->remote_dir, $this->remote_target_dir);
 
 			// als de files en database klaarstaan kan de nieuwe versie geactiveerd worden
 			// door de symlinks te updaten en postDeploy te draaien
@@ -473,7 +473,7 @@ class BaseDeploy
 			$this->updateFiles($this->remote_host, $this->remote_dir, $this->remote_target_dir);
 
 			if (!empty($this->database_dirs))
-				$this->updateDatabase($this->database_host, $this->remote_dir, $this->remote_target_dir);
+				$this->updateDatabase($this->remote_host, $this->database_host, $this->remote_dir, $this->remote_target_dir);
 
 			$this->changeSymlink($this->remote_host, $this->remote_dir, $this->remote_target_dir);
 			$this->postDeploy($this->remote_host, $this->remote_dir, $this->remote_target_dir);
@@ -510,7 +510,7 @@ class BaseDeploy
 
             // nadat de symlinks zijn teruggedraaid de database terugdraaien
             if (!empty($this->database_dirs))
-                $this->rollbackDatabase($this->database_host, $this->remote_dir);
+                $this->rollbackDatabase($this->remote_host[0], $this->database_host, $this->remote_dir);
 
             // de caches resetten
             foreach ($this->remote_host as $key => $remote_host)
@@ -531,7 +531,7 @@ class BaseDeploy
             $this->changeSymlink($this->remote_host, $this->remote_dir, $this->previous_remote_target_dir);
 
             if (!empty($this->database_dirs))
-                $this->rollbackDatabase($this->database_host, $this->remote_dir);
+                $this->rollbackDatabase($this->remote_host, $this->database_host, $this->remote_dir);
 
             $this->clearRemoteCaches($this->remote_host, $this->remote_dir, $this->previous_remote_target_dir);
             $this->postRollback($this->remote_host, $this->remote_dir, $this->previous_remote_target_dir);
@@ -723,13 +723,14 @@ class BaseDeploy
 		$this->sshExec($remote_host, "cd $remote_dir; rm production; ln -s {$target_dir} production", $output, $return);
 	}
 
-	/**
-	 * Voert database migraties uit voor de nieuwste upload
-	 *
-	 * @param string $database_host
-	 * @param string $action 			update of rollback
-	 */
-	protected function checkDatabase($database_host, $action)
+    /**
+     * Voert database migraties uit voor de nieuwste upload
+     *
+     * @param string $remote_host
+     * @param string $database_host
+     * @param string $action             update of rollback
+     */
+	protected function checkDatabase($remote_host, $database_host, $action)
 	{
 		$this->log('checkDatabase', 2);
 
@@ -754,17 +755,18 @@ class BaseDeploy
         $this->log($msg);
         $this->log($files);
 
-        $this->getDatabaseLogin($database_host);
+        $this->getDatabaseLogin($remote_host, $database_host);
 	}
 
-	/**
-	 * Voert database migraties uit voor de nieuwste upload
-	 *
-	 * @param string $database_host
-	 * @param string $remote_dir
-	 * @param string $target_dir
-	 */
-	protected function updateDatabase($database_host, $remote_dir, $target_dir)
+    /**
+     * Voert database migraties uit voor de nieuwste upload
+     *
+     * @param string $remote_host
+     * @param string $database_host
+     * @param string $remote_dir
+     * @param string $target_dir
+     */
+	protected function updateDatabase($remote_host, $database_host, $remote_dir, $target_dir)
 	{
 		$this->log('updateDatabase', 2);
 
@@ -779,20 +781,21 @@ class BaseDeploy
         $this->log('database updates die uitgevoerd zullen worden:');
         $this->log($files);
 
-        $this->getDatabaseLogin($database_host);
+        $this->getDatabaseLogin($remote_host, $database_host);
 
         $output = array();
         $return = null;
-        $this->sendToDatabase($database_host, "cd $remote_dir/{$target_dir}; php {$this->database_patcher} update {$this->database_name} ". implode(' ', $files), $output, $return, $this->database_name, $this->database_user, $this->database_pass);
+        $this->sendToDatabase($remote_host, $database_host, "cd $remote_dir/{$target_dir}; php {$this->database_patcher} update {$this->database_name} ". implode(' ', $files), $output, $return, $this->database_name, $this->database_user, $this->database_pass);
 	}
 
     /**
      * Reverts database migrations to the previous deployment
      *
+     * @param string $remote_host
      * @param string $database_host
      * @param string $remote_dir
      */
-	protected function rollbackDatabase($database_host, $remote_dir)
+	protected function rollbackDatabase($remote_host, $database_host, $remote_dir)
 	{
 		$this->log('rollbackDatabase', 2);
 
@@ -807,9 +810,9 @@ class BaseDeploy
         $this->log('database rollbacks die uitgevoerd zullen worden:');
         $this->log($files);
 
-        $this->getDatabaseLogin($database_host);
+        $this->getDatabaseLogin($remote_host, $database_host);
 
-        $this->sendToDatabase($database_host, "cd $remote_dir/{$this->last_remote_target_dir}; php {$this->database_patcher} rollback ". implode(' ', $files), $output, $return, $this->database_name, $this->database_user, $this->database_pass);
+        $this->sendToDatabase($remote_host, $database_host, "cd $remote_dir/{$this->last_remote_target_dir}; php {$this->database_patcher} rollback ". implode(' ', $files), $output, $return, $this->database_name, $this->database_user, $this->database_pass);
 	}
 
     /**
@@ -844,8 +847,6 @@ class BaseDeploy
 	{
 		if (!isset($this->files_to_rename["$remote_host-$remote_dir"]))
 		{
-			$cluster_role = (strpos($remote_dir, 'clustermaster') !== false) ? 'master' : ((strpos($remote_dir, 'clusternode') !== false) ? 'node' : '');
-
 			$target_files_to_move = array();
 
 			// doelspecifieke files hernoemen
@@ -937,9 +938,11 @@ class BaseDeploy
     /**
      * Prompt the user to enter the database name, login and password to use on the remote server for executing the database patches.
      *
-     * @param $database_host
+     * @param string $remote_host
+     * @param string $database_host
+     * @return
      */
-    protected function getDatabaseLogin($database_host)
+    protected function getDatabaseLogin($remote_host, $database_host)
 	{
 		if ($this->database_checked)
 			return;
@@ -961,10 +964,10 @@ class BaseDeploy
 			$password = $this->database_pass !== null ? $this->database_pass : self::inputPrompt('Database password: ', '', true);
 
 			// controleren of deze gebruiker een tabel mag aanmaken (rudimentaire toegangstest)
-			$this->sendToDatabase($database_host, "echo '". addslashes("CREATE TABLE temp_{$this->timestamp} (field1 INT NULL); DROP TABLE temp_{$this->timestamp};") ."'", $output, $return, $database_name, $username, $password);
+			$this->sendToDatabase($remote_host, $database_host, "echo '". addslashes("CREATE TABLE temp_{$this->timestamp} (field1 INT NULL); DROP TABLE temp_{$this->timestamp};") ."'", $output, $return, $database_name, $username, $password);
 
 			if ($return != 0)
-				return $this->getDatabaseLogin($database_host);
+				return $this->getDatabaseLogin($remote_host, $database_host);
 
 			$this->log('database check passed');
 		}
@@ -978,6 +981,7 @@ class BaseDeploy
     /**
      * Send a query to the database.
      *
+     * @param string $remote_host
      * @param string $database_host
      * @param string $command
      * @param array $output
@@ -986,14 +990,14 @@ class BaseDeploy
      * @param string $username
      * @param string $password
      */
-    protected function sendToDatabase($database_host, $command, &$output, &$return, $database_name, $username, $password)
+    protected function sendToDatabase($remote_host, $database_host, $command, &$output, &$return, $database_name, $username, $password)
 	{
 		if ($this->database_checked && $this->database_name == 'skip')
 			return;
 
 		$output = array();
 		$return = null;
-		$this->sshExec($database_host, "$command | mysql -u$username -p$password $database_name", $output, $return, '/ mysql -u([^ ]+) -p[^ ]+ /', ' mysql -u$1 -p***** ');
+		$this->sshExec($remote_host, "$command | mysql -h$database_host -u$username -p$password $database_name", $output, $return, '/ mysql -u([^ ]+) -p[^ ]+ /', ' mysql -u$1 -p***** ');
 	}
 
     /**
