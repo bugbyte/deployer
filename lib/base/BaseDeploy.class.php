@@ -683,23 +683,26 @@ class BaseDeploy
 	 */
 	protected function restartGearmanWorkers($remote_host, $remote_dir, $target_dir)
 	{
-		if (isset($this->gearman['workers']) && !empty($this->gearman['workers'])) {
+        $this->log("restartGearmanWorkers($remote_host, $remote_dir, $target_dir)", LOG_DEBUG);
 
-			foreach ($this->gearman['servers'] as $server) {
+        if (isset($this->gearman['workers']) && !empty($this->gearman['workers']))
+        {
+            $cmd = "cd $remote_dir/{$target_dir}; ";
 
-				foreach ($this->gearman['workers'] as $worker) {
-
+			foreach ($this->gearman['servers'] as $server)
+			{
+				foreach ($this->gearman['workers'] as $worker)
+				{
 					$worker = sprintf($worker, $this->target);
 
-					$cmd = "cd $remote_dir/{$target_dir}; php {$this->gearman_restarter} --ip={$server['ip']} --port={$server['port']} --function=$worker";
-
-					$this->log("restartGearmanWorkers($remote_host, $remote_dir, $target_dir)", LOG_DEBUG);
-
-					$output = array();
-					$return = null;
-					$this->sshExec($remote_host, $cmd, $output, $return);
+					$cmd .= "php {$this->gearman_restarter} --ip={$server['ip']} --port={$server['port']} --function=$worker; ";
 				}
 			}
+
+            $output = array();
+            $return = null;
+
+            $this->sshExec($remote_host, $cmd, $output, $return);
 		}
 	}
 
