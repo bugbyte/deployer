@@ -16,6 +16,8 @@ $deploy = new Deploy(array(
 	'database_user' => 'root',
 	'target' => 'prod',
 	'database-patcher'	=> 'lib/deployer/database-patcher.php',
+	'datadir-patcher'	=> 'lib/deployer/datadir-patcher.php',
+
 
     // APC cache handling
     'apc_deploy_version_template' => 'lib/deployer/apc/deploy_version_template.php',
