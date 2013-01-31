@@ -12,6 +12,7 @@ $deploy = new Deploy(array(
 	'remote_user' => 'user',
 	'rsync_excludes' => 'config/rsync_exclude.txt',
 	'database_dirs' => array('data/sql-updates'),
+	'database_host' => 'localhost',
 	'database_name' => 'database',
 	'database_user' => 'root',
 	'target' => 'prod',
