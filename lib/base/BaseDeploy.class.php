@@ -413,7 +413,7 @@ class BaseDeploy
 		if (!empty($this->database_dirs))
 			$this->checkDatabase($this->remote_host, $this->database_host, $action);
 
-		if ($this->apc_deploy_version_template) {
+		if (isset($this->apc_deploy_version_template)) {
 			if (!file_exists($this->apc_deploy_version_template)) {
 				throw new DeployException("{$this->apc_deploy_version_template} does not exist.");
 			}
