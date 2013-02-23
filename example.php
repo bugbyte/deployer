@@ -11,6 +11,10 @@ $deploy = new Deploy(array(
 	'remote_dir' => '/home/user/project', // this is the same for all remote hosts if you define multiple
 	'remote_user' => 'user', // setup public key access to make it easy for yourself, many connections are made
 	'rsync_excludes' => 'config/rsync_exclude.txt',
+	'target_specific_files' => array( // list of files that will be renamed on the remote host
+		'web/.htaccess',
+		'config/database.php'
+	),
 	'database_dirs' => array('data/sql-updates'),
 	'database_host' => 'localhost',
 	'database_name' => 'database',
