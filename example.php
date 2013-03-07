@@ -25,7 +25,7 @@ $deploy = new Deploy(array(
 	'datadir_patcher'	=> 'lib/deployer/datadir-patcher.php',
 
     // APC cache handling
-    // EXPERIMENTAL: it works, but only for one user per server. Only use it yet unless you own the box.
+    // EXPERIMENTAL: it works, but only for one user per server. Don't use it yet unless you're sure you're the only one on the box using it.
     'apc_deploy_version_template' => 'lib/deployer/apc/deploy_version_template.php',
     'apc_deploy_version_path' => '/home/user/deploy_version.php',
     'apc_deploy_setrev_url' => 'localhost/deployer/apc/setrev.php'
