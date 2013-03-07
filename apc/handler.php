@@ -12,7 +12,7 @@ if (defined('DEPLOY_PROJECT')) {
 $rev = apc_fetch($deployment_key);
 
 if ($rev === false) {
-    // the key doesn't exist, so this project is new and no clear cache is needed
+    // the key doesn't exist, so this project is new or another project has cleared the cache
     apc_store($deployment_key, DEPLOY_VERSION);
 } elseif ($rev != DEPLOY_VERSION) {
     // the key exists but it's the wrong value, clear the cache
