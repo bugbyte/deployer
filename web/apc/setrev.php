@@ -1,14 +1,14 @@
 <?php
 
 //if ($_SERVER['REMOTE_ADDR'] == '127.0.0.1') {
-    if (!empty($_GET['rev'])) {
-        if (!empty($_GET['project'])) {
+    if (isset($_GET['rev']) && !empty($_GET['rev'])) {
+        $rev = $_GET['rev'];
+
+        if (isset($_GET['rev']) && !empty($_GET['project'])) {
             $key = $_GET['project'] .'_deploy_version';
-            $rev = $_GET['rev'];
         } else {
-            // backward compatibility
+            // backwards compatibility
             $key = 'deploy_version';
-            $rev = $_GET['rev'];
         }
 
         apc_clear_cache();

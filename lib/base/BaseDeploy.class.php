@@ -626,7 +626,7 @@ class BaseDeploy
 				    "sed 's/#deployment_project#/{$this->project_name}/' > ".
 				    "{$this->apc_deploy_version_path}.tmp; ".
 				"mv {$this->apc_deploy_version_path}.tmp {$this->apc_deploy_version_path}; ".
-				"curl -s -S {$apc_deploy_setrev_url}?rev={$this->timestamp}&project={$this->project_name}",
+				"curl -s -S '{$apc_deploy_setrev_url}?rev={$this->timestamp}&project={$this->project_name}'",
 			$output, $return);
 
 		$this->log($output);
