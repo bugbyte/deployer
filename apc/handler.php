@@ -1,7 +1,13 @@
 <?php
 
 // checks deploy version against the one in APC's cache and resets the cache if they don't match
-$deployment_key = DEPLOY_PROJECT .'_deploy_version';
+if (defined('DEPLOY_PROJECT')) {
+    $deployment_key = DEPLOY_PROJECT .'_deploy_version';
+    $deployment_pid_key = DEPLOY_PROJECT .'_stat_'. getmypid();
+} else {
+    $deployment_key = 'deploy_version';
+    $deployment_pid_key = 'php.pid_'.getmypid();
+}
 
 $rev = apc_fetch($deployment_key);
 
@@ -14,8 +20,6 @@ if ($rev === false) {
     apc_clear_cache('user');
     apc_store($deployment_key, DEPLOY_VERSION);
 }
-
-$deployment_pid_key = DEPLOY_PROJECT .'_stat_'. getmypid();
 
 // do the same check for every thread of the server (apache, php-fpm, etc.)
 if (apc_fetch($deployment_pid_key) != DEPLOY_VERSION) {
