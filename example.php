@@ -28,15 +28,13 @@ $deploy = new Deploy(array(
 	'database_patcher'	=> 'lib/deployer/database-patcher.php',
 	'datadir_patcher'	=> 'lib/deployer/datadir-patcher.php',
 
-    // APC cache handling
-    // EXPERIMENTAL: it works, but only for one user per server. Only use it yet unless you own the box.
+    // APC cache handling (see apc/frontcontroller_example.php for details)
     'apc_deploy_version_template' => 'lib/deployer/apc/deploy_version_template.php',
-    'apc_deploy_version_path' => '/home/user/deploy_version.php',
-    'apc_deploy_setrev_url' => 'localhost/deployer/apc/setrev.php'
+    'apc_deploy_version_path' => 'deploy_version.php', // this file will be placed in the project's root
+    'apc_deploy_setrev_url' => 'http://localhost/deployer/apc/setrev.php' // this can be an array, to mirror remote_host
 ));
 
-switch($_SERVER['argv'][1])
-{
+switch($_SERVER['argv'][1]) {
 	case 'deploy':
 		$deploy->deploy();
 		break;

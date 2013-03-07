@@ -4,3 +4,4 @@
  */
 
 define('DEPLOY_VERSION','#deployment_timestamp#');
+define('DEPLOY_PROJECT','#deployment_project#');
