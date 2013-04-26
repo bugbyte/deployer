@@ -8,6 +8,7 @@ $deploy = new Deploy(array(
 	'project_name' => 'project',
 	'basedir' => dirname(__FILE__), // the root dir of the project
 	'remote_host' => 'www.example.com', // can also be: array('serv1.example.com', 'serv2.example.com')
+    'remote_port' => 22, // this is the default port and may be omitted
 	'remote_dir' => '/home/user/project', // this is the same for all remote hosts if you define multiple
 	'remote_user' => 'user', // setup public key access to make it easy for yourself, many connections are made
 	'rsync_excludes' => 'config/rsync_exclude.txt',

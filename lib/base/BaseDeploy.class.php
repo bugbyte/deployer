@@ -49,6 +49,13 @@ class BaseDeploy
 	protected $remote_host = null;
 
 	/**
+	 * The ssh port of the remote server(s)
+	 *
+	 * @var integer
+	 */
+	protected $remote_port = 22;
+
+	/**
 	 * The username of the account on the remote server
 	 *
 	 * @var string
@@ -297,6 +304,9 @@ class BaseDeploy
 
 		// als database host niet wordt meegegeven automatisch de eerste remote host (clustermaster) pakken.
 		$this->database_host	= isset($options['database_host']) ? $options['database_host'] : (is_array($this->remote_host) ? $this->remote_host[0] : $this->remote_host);
+
+		if (isset($options['remote_port']))
+			$this->remote_port = $options['remote_port'];
 
 		if (isset($options['database_name']))
 			$this->database_name = $options['database_name'];
@@ -648,7 +658,7 @@ class BaseDeploy
 		if ($target_dir) {
 			$this->log('Changed directories and files:', LOG_INFO, true);
 
-			$this->rsyncExec($this->rsync_path .' -azcO --force --dry-run --delete --progress '. $this->prepareExcludes() .' ./ '. $this->remote_user .'@'. $remote_host .':'. $remote_dir .'/'. $this->last_remote_target_dir, 'Rsync check is mislukt');
+			$this->rsyncExec($this->rsync_path .' --rsh="ssh -p '. $this->remote_port .'" -azcO --force --dry-run --delete --progress '. $this->prepareExcludes() .' ./ '. $this->remote_user .'@'. $remote_host .':'. $remote_dir .'/'. $this->last_remote_target_dir, 'Rsync check is mislukt');
 		} else {
 			$this->log('No deployment history found');
 		}
@@ -665,7 +675,7 @@ class BaseDeploy
 	{
 		$this->log('updateFiles', LOG_DEBUG);
 
-		$this->rsyncExec($this->rsync_path .' -azcO --force --delete --progress '. $this->prepareExcludes() .' '. $this->prepareLinkDest($remote_dir) .' ./ '. $this->remote_user .'@'. $remote_host .':'. $remote_dir .'/'. $target_dir);
+		$this->rsyncExec($this->rsync_path .' --rsh="ssh -p '. $this->remote_port .'" -azcO --force --delete --progress '. $this->prepareExcludes() .' '. $this->prepareLinkDest($remote_dir) .' ./ '. $this->remote_user .'@'. $remote_host .':'. $remote_dir .'/'. $target_dir);
 
 		$this->fixDatadirSymlinks($remote_host, $remote_dir, $target_dir);
 
@@ -1374,7 +1384,7 @@ class BaseDeploy
 	 */
 	protected function sshExec($remote_host, $command, &$output, &$return, $hide_pattern = '', $hide_replacement = '', $ouput_loglevel = LOG_INFO)
 	{
-		$cmd = $this->ssh_path .' '. $this->remote_user .'@'. $remote_host .' "'. str_replace('"', '\"', $command) .'"';
+		$cmd = $this->ssh_path .' -p '. $this->remote_port .' '. $this->remote_user .'@'. $remote_host .' "'. str_replace('"', '\"', $command) .'"';
 
 		if ($hide_pattern != '') {
 			$show_cmd = preg_replace($hide_pattern, $hide_replacement, $cmd);
