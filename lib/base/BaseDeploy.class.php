@@ -263,14 +263,14 @@ class BaseDeploy
 	 *
 	 * @var string
 	 */
-	protected $apc_deploy_timestamp_template = null;
+	protected $apc_deploy_version_template = null;
 
 	/**
 	 * The absolute physical path where the deploy_timestamp.php should be placed (on the remote server)
 	 *
 	 * @var string
 	 */
-	protected $apc_deploy_timestamp_path = null;
+	protected $apc_deploy_version_path = null;
 
 	/**
 	 * The local url (on the remote server) where setrev.php can be reached (one for each remote host)
