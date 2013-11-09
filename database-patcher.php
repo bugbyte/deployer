@@ -34,7 +34,7 @@ echo getInstructions($action, $classes);
  * Opent alle classes
  *
  * @param string $action
- * @param array $classes
+ * @param SQL_update[] $classes
  * @return string
  */
 function getInstructions($action, $classes)

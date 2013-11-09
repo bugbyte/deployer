@@ -383,7 +383,9 @@ class BaseDeploy
 		$this->timestamp = time();
 		$this->remote_target_dir = strtr($this->remote_dir_format, array('%project_name%' => $this->project_name, '%timestamp%' => date($this->remote_dir_timestamp_format, $this->timestamp)));
 
-		list($this->previous_timestamp, $this->last_timestamp) = $this->findPastDeploymentTimestamps($remote_host, $this->remote_dir);
+        if ($timestamps = $this->findPastDeploymentTimestamps($remote_host, $this->remote_dir)) {
+            list($this->previous_timestamp, $this->last_timestamp) = $timestamps;
+        }
 
 		if ($this->previous_timestamp)
 		{
@@ -433,7 +435,7 @@ class BaseDeploy
 		{
 			if (is_array($this->remote_host))
 			{
-				foreach ($this->remote_host as $key => $remote_host)
+				foreach ($this->remote_host as $remote_host)
 				{
 					if ($files = $this->listFilesToRename($remote_host, $this->remote_dir))
 					{
@@ -461,6 +463,8 @@ class BaseDeploy
 			return $this->inputPrompt('Proceed with deployment? (yes/no): ', 'no') == 'yes';
 		elseif ($action == 'rollback')
 			return $this->inputPrompt('Proceed with rollback? (yes/no): ', 'no') == 'yes';
+
+        return false;
 	}
 
 	/**
@@ -477,7 +481,7 @@ class BaseDeploy
 		if (is_array($this->remote_host))
 		{
 			// eerst preDeploy draaien per host, dan alle files synchen
-			foreach ($this->remote_host as $key => $remote_host)
+			foreach ($this->remote_host as $remote_host)
 			{
 				$this->preDeploy($remote_host, $this->remote_dir, $this->remote_target_dir);
 				$this->updateFiles($remote_host, $this->remote_dir, $this->remote_target_dir);
@@ -489,7 +493,7 @@ class BaseDeploy
 
 			// als de files en database klaarstaan kan de nieuwe versie geactiveerd worden
 			// door de symlinks te updaten en postDeploy te draaien
-			foreach ($this->remote_host as $key => $remote_host)
+			foreach ($this->remote_host as $remote_host)
 			{
 				$this->changeSymlink($remote_host, $this->remote_dir, $this->remote_target_dir);
 				$this->postDeploy($remote_host, $this->remote_dir, $this->remote_target_dir);
@@ -531,7 +535,7 @@ class BaseDeploy
 		if (is_array($this->remote_host))
 		{
 			// eerst op alle hosts de symlink terugdraaien
-			foreach ($this->remote_host as $key => $remote_host)
+			foreach ($this->remote_host as $remote_host)
 			{
 				$this->preRollback($remote_host, $this->remote_dir, $this->previous_remote_target_dir);
 				$this->changeSymlink($remote_host, $this->remote_dir, $this->previous_remote_target_dir);
@@ -542,14 +546,14 @@ class BaseDeploy
 				$this->rollbackDatabase($this->remote_host[0], $this->database_host, $this->remote_dir);
 
 			// de caches resetten
-			foreach ($this->remote_host as $key => $remote_host)
+			foreach ($this->remote_host as $remote_host)
 			{
 				$this->clearRemoteCaches($remote_host, $this->remote_dir, $this->previous_remote_target_dir);
 				$this->postRollback($remote_host, $this->remote_dir, $this->previous_remote_target_dir);
 			}
 
 			// als laatste de nieuwe directory terugdraaien
-			foreach ($this->remote_host as $key => $remote_host)
+			foreach ($this->remote_host as $remote_host)
 			{
 				$this->rollbackFiles($remote_host, $this->remote_dir, $this->last_remote_target_dir);
 			}
@@ -693,18 +697,18 @@ class BaseDeploy
 	{
 		$this->log('fixDatadirSymlinks', LOG_DEBUG);
 
-		if (!empty($this->data_dirs))
-		{
-			$this->log('Creating data dir symlinks:', LOG_DEBUG);
+		if (empty($this->data_dirs))
+            return;
 
-			$cmd = "cd $remote_dir/{$target_dir}; php {$this->datadir_patcher} --datadir-prefix={$this->data_dir_prefix} --previous-dir={$this->last_remote_target_dir} ". implode(' ', $this->data_dirs);
+        $this->log('Creating data dir symlinks:', LOG_DEBUG);
 
-			$output = array();
-			$return = null;
-			$this->sshExec($remote_host, $cmd, $output, $return);
+        $cmd = "cd $remote_dir/{$target_dir}; php {$this->datadir_patcher} --datadir-prefix={$this->data_dir_prefix} --previous-dir={$this->last_remote_target_dir} ". implode(' ', $this->data_dirs);
 
-			$this->log($output);
-		}
+        $output = array();
+        $return = null;
+        $this->sshExec($remote_host, $cmd, $output, $return);
+
+        $this->log($output);
 	}
 
 	/**
@@ -718,23 +722,23 @@ class BaseDeploy
 	{
 		$this->log("restartGearmanWorkers($remote_host, $remote_dir, $target_dir)", LOG_DEBUG);
 
-		if (isset($this->gearman['workers']) && !empty($this->gearman['workers'])) {
+		if (!isset($this->gearman['workers']) || empty($this->gearman['workers']))
+            return;
 
-			$cmd = "cd $remote_dir/{$target_dir}; ";
+        $cmd = "cd $remote_dir/{$target_dir}; ";
 
-			foreach ($this->gearman['servers'] as $server) {
-				foreach ($this->gearman['workers'] as $worker) {
-					$worker = sprintf($worker, $this->target);
+        foreach ($this->gearman['servers'] as $server) {
+            foreach ($this->gearman['workers'] as $worker) {
+                $worker = sprintf($worker, $this->target);
 
-					$cmd .= "php {$this->gearman_restarter} --ip={$server['ip']} --port={$server['port']} --function=$worker; ";
-				}
-			}
+                $cmd .= "php {$this->gearman_restarter} --ip={$server['ip']} --port={$server['port']} --function=$worker; ";
+            }
+        }
 
-			$output = array();
-			$return = null;
+        $output = array();
+        $return = null;
 
-			$this->sshExec($remote_host, $cmd, $output, $return);
-		}
+        $this->sshExec($remote_host, $cmd, $output, $return);
 	}
 
 	/**
@@ -841,18 +845,18 @@ class BaseDeploy
 	 */
 	protected function renameTargetFiles($remote_host, $remote_dir)
 	{
-		if ($files_to_move = $this->listFilesToRename($remote_host, $remote_dir))
-		{
-			// configfiles verplaatsen
-			$target_files_to_move = '';
+		if (!$files_to_move = $this->listFilesToRename($remote_host, $remote_dir))
+            return;
 
-			foreach ($files_to_move as $newpath => $currentpath)
-				$target_files_to_move .= "mv $currentpath $newpath; ";
+        // configfiles verplaatsen
+        $target_files_to_move = '';
 
-			$output = array();
-			$return = null;
-			$this->sshExec($remote_host, "cd {$remote_dir}/{$this->remote_target_dir}; $target_files_to_move", $output, $return);
-		}
+        foreach ($files_to_move as $newpath => $currentpath)
+            $target_files_to_move .= "mv $currentpath $newpath; ";
+
+        $output = array();
+        $return = null;
+        $this->sshExec($remote_host, "cd {$remote_dir}/{$this->remote_target_dir}; $target_files_to_move", $output, $return);
 	}
 
 	/**
@@ -995,8 +999,10 @@ class BaseDeploy
 			// controleren of deze gebruiker een tabel mag aanmaken (rudimentaire toegangstest)
 			$this->sendToDatabase($remote_host, $database_host, "echo '". addslashes("CREATE TABLE temp_{$this->timestamp} (field1 INT NULL); DROP TABLE temp_{$this->timestamp};") ."'", $output, $return, $database_name, $username, $password);
 
-			if ($return != 0)
-				return $this->getDatabaseLogin($remote_host, $database_host);
+			if ($return != 0) {
+				$this->getDatabaseLogin($remote_host, $database_host);
+                return;
+            }
 
 			$this->log('Database check passed');
 		}
@@ -1060,6 +1066,7 @@ class BaseDeploy
 
 			foreach ($dir as $entry)
 			{
+                /** @var SplFileInfo|DirectoryIterator $entry */
 				if (!$entry->isDot() && $entry->isFile())
 				{
 					if (preg_match('/sql_(\d{8}_\d{6})\.class.php/', $entry->getFilename(), $matches))
@@ -1201,16 +1208,16 @@ class BaseDeploy
 		$return = null;
 		$this->sshExec($remote_host, "mkdir -p $remote_dir", $output, $return, '', '', LOG_DEBUG);
 
-		if (!empty($this->data_dirs))
-		{
-			$data_dirs = count($this->data_dirs) > 1 ? '{'. implode(',', $this->data_dirs) .'}' : implode(',', $this->data_dirs);
+		if (empty($this->data_dirs))
+            return;
 
-			$cmd = "mkdir -v -m 0775 -p $remote_dir/{$this->data_dir_prefix}/$data_dirs";
+        $data_dirs = count($this->data_dirs) > 1 ? '{'. implode(',', $this->data_dirs) .'}' : implode(',', $this->data_dirs);
 
-			$output = array();
-			$return = null;
-			$this->sshExec($remote_host, $cmd, $output, $return, '', '', LOG_DEBUG);
-		}
+        $cmd = "mkdir -v -m 0775 -p $remote_dir/{$this->data_dir_prefix}/$data_dirs";
+
+        $output = array();
+        $return = null;
+        $this->sshExec($remote_host, $cmd, $output, $return, '', '', LOG_DEBUG);
 	}
 
 	/**
@@ -1234,44 +1241,41 @@ class BaseDeploy
 		$return = null;
 		$this->sshExec($remote_host, "ls -1 $remote_dir", $dirs, $return, '', '', LOG_DEBUG);
 
-		if ($return !== 0) {
+		if ($return !== 0)
 			throw new DeployException('ssh initialize failed');
-		}
 
-		if (count($dirs))
-		{
-			$past_deployments = array();
-			$deployment_timestamps = array();
+		if (!count($dirs))
+            return null;
 
-			foreach ($dirs as $dirname)
-			{
-				if (
-					preg_match('/'. preg_quote($this->project_name) .'_\d{4}-\d{2}-\d{2}_\d{6}/', $dirname) &&
-					($time = strtotime(str_replace(array($this->project_name .'_', '_'), array('', ' '), $dirname)))
-				)
-				{
-					$past_deployments[] = $dirname;
-					$deployment_timestamps[] = $time;
-				}
-			}
+        $past_deployments = array();
+        $deployment_timestamps = array();
 
-			$count = count($deployment_timestamps);
+        foreach ($dirs as $dirname)
+        {
+            if (
+                preg_match('/'. preg_quote($this->project_name) .'_\d{4}-\d{2}-\d{2}_\d{6}/', $dirname) &&
+                ($time = strtotime(str_replace(array($this->project_name .'_', '_'), array('', ' '), $dirname)))
+            )
+            {
+                $past_deployments[] = $dirname;
+                $deployment_timestamps[] = $time;
+            }
+        }
 
-			if ($count > 0)
-			{
-				$this->log('Past deployments:', LOG_INFO, true);
-				$this->log($past_deployments, LOG_INFO, true);
+        $count = count($deployment_timestamps);
 
-				sort($deployment_timestamps);
+        if ($count == 0)
+            return null;
 
-				if ($count >= 2)
-					return array_slice($deployment_timestamps, -2);
+        $this->log('Past deployments:', LOG_INFO, true);
+        $this->log($past_deployments, LOG_INFO, true);
 
-				return array(null, array_pop($deployment_timestamps));
-			}
-		}
+        sort($deployment_timestamps);
 
-		return array(null, null);
+        if ($count >= 2)
+            return array_slice($deployment_timestamps, -2);
+
+        return array(null, array_pop($deployment_timestamps));
 	}
 
 	/**
@@ -1294,68 +1298,66 @@ class BaseDeploy
 			throw new DeployException('ssh initialize failed');
 		}
 
-		if (count($dirs))
-		{
-			$deployment_dirs = array();
+		if (!count($dirs))
+            return null;
 
-			foreach ($dirs as $dirname)
-			{
-				if (preg_match('/'. preg_quote($this->project_name) .'_\d{4}-\d{2}-\d{2}_\d{6}/', $dirname))
-				{
-					$deployment_dirs[] = $dirname;
-				}
-			}
+        $deployment_dirs = array();
 
-			// de two latest deployments always stay
-			if (count($deployment_dirs) > 2)
-			{
-				$dirs_to_delete = array();
+        foreach ($dirs as $dirname)
+        {
+            if (preg_match('/'. preg_quote($this->project_name) .'_\d{4}-\d{2}-\d{2}_\d{6}/', $dirname))
+            {
+                $deployment_dirs[] = $dirname;
+            }
+        }
 
-				sort($deployment_dirs);
+        // the two latest deployments always stay
+        if (count($deployment_dirs) <= 2)
+            return null;
 
-				$deployment_dirs = array_slice($deployment_dirs, 0, -2);
+        $dirs_to_delete = array();
 
-				foreach ($deployment_dirs as $key => $dirname)
-				{
-					$time = strtotime(str_replace(array($this->project_name .'_', '_'), array('', ' '), $dirname));
+        sort($deployment_dirs);
 
-					// deployments older than a month can go
-					if ($time < strtotime('-1 month')) {
-						$this->log("$dirname is older than a month");
+        $deployment_dirs = array_slice($deployment_dirs, 0, -2);
 
-						$dirs_to_delete[] = $dirname;
-					}
+        foreach ($deployment_dirs as $key => $dirname)
+        {
+            $time = strtotime(str_replace(array($this->project_name .'_', '_'), array('', ' '), $dirname));
 
-					// of deployments older than a week only the last one of the day stays
-					elseif ($time < strtotime('-1 week'))
-					{
-						if (isset($deployment_dirs[$key+1]))
-						{
-							$time_next = strtotime(str_replace(array($this->project_name .'_', '_'), array('', ' '), $deployment_dirs[$key+1]));
+            // deployments older than a month can go
+            if ($time < strtotime('-1 month')) {
+                $this->log("$dirname is older than a month");
 
-							// if the next deployment was on the same day this one can go
-							if (date('j', $time_next) == date('j', $time))
-							{
-								$this->log("$dirname was replaced the same day");
+                $dirs_to_delete[] = $dirname;
+            }
+            // of deployments older than a week only the last one of the day stays
+            elseif ($time < strtotime('-1 week'))
+            {
+                if (isset($deployment_dirs[$key+1]))
+                {
+                    $time_next = strtotime(str_replace(array($this->project_name .'_', '_'), array('', ' '), $deployment_dirs[$key+1]));
 
-								$dirs_to_delete[] = $dirname;
-							}
-							else
-							{
-								$this->log("$dirname stays");
-							}
-						}
-					}
+                    // if the next deployment was on the same day this one can go
+                    if (date('j', $time_next) == date('j', $time))
+                    {
+                        $this->log("$dirname was replaced the same day");
 
-					else
-					{
-						$this->log("$dirname stays");
-					}
-				}
+                        $dirs_to_delete[] = $dirname;
+                    }
+                    else
+                    {
+                        $this->log("$dirname stays");
+                    }
+                }
+            }
+            else
+            {
+                $this->log("$dirname stays");
+            }
+        }
 
-				return $dirs_to_delete;
-			}
-		}
+        return $dirs_to_delete;
 	}
 
 	/**
