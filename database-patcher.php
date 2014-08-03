@@ -21,7 +21,7 @@ if (isset($_SERVER['argv'][2])) {
 if ($_SERVER['argc'] > 3) {
     $patches = array_slice($_SERVER['argv'], 3);
 } else {
-	throw new DeployException('Welke files?');
+    throw new DeployException('Welke files?');
 }
 
 $path = findRootPath($_SERVER['argv'][0], __FILE__);
@@ -39,15 +39,14 @@ echo getInstructions($action, $classes);
  */
 function getInstructions($action, $classes)
 {
-	$sql = '';
+    $sql = '';
 
-	foreach ($classes as $class)
-	{
-		if ($action == 'update')
-			$sql .= $class->up() . PHP_EOL;
-		elseif ($action == 'rollback')
-			$sql .= $class->down() . PHP_EOL;
-	}
+    foreach ($classes as $class) {
+        if ($action == 'update')
+            $sql .= $class->up() . PHP_EOL;
+        elseif ($action == 'rollback')
+            $sql .= $class->down() . PHP_EOL;
+    }
 
-	return $sql;
+    return $sql;
 }
