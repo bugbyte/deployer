@@ -39,19 +39,19 @@
  */
 interface SQL_update
 {
-	/**
+    /**
 	 * Geeft de SQL statements terug die moeten worden uitgevoerd om de database te upgraden naar deze timestamp.
 	 * Let op: de query moet altijd eindigen met een ; want als er meerdere updates moeten worden uitgevoerd worden ze allemaal aan elkaar gekoppeld.
 	 *
 	 * @returns string
 	 */
-	public function up();
+    public function up();
 
-	/**
+    /**
 	 * Geeft de SQL statements terug die de wijzigingen van up() ongedaan maken
 	 * Let op: de query moet altijd eindigen met een ; want als er meerdere updates moeten worden uitgevoerd worden ze allemaal aan elkaar gekoppeld.
 	 *
 	 * @returns string
 	 */
-	public function down();
+    public function down();
 }
