@@ -394,9 +394,9 @@ class BaseDeploy
 
 		// als alles goed is gegaan kan er doorgegaan worden met de deployment
 		if ($action == 'update')
-			return $this->inputPrompt('Proceed with deployment? (yes/no): ', 'no') == 'yes';
+			return static::inputPrompt('Proceed with deployment? (yes/no): ', 'no') == 'yes';
 		elseif ($action == 'rollback')
-			return $this->inputPrompt('Proceed with rollback? (yes/no): ', 'no') == 'yes';
+			return static::inputPrompt('Proceed with rollback? (yes/no): ', 'no') == 'yes';
 
         return false;
 	}
@@ -536,7 +536,7 @@ class BaseDeploy
 		}
 
 		if (!empty($past_deployments)) {
-			if ($this->inputPrompt('Delete old directories? (yes/no): ', 'no') == 'yes')
+			if (static::inputPrompt('Delete old directories? (yes/no): ', 'no') == 'yes')
 				$this->deletePastDeployments($past_deployments);
 		}
 		else {
