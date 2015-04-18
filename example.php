@@ -20,13 +20,7 @@ $deploy = new Deploy(array(
 		'web/.htaccess',
 		'config/database.php'
 	),
-	'database_dirs' => array('data/sql-updates'),
-	'database_host' => 'localhost',
-	'database_name' => 'database',
-	'database_user' => 'root', // if you can omit these you will be asked for them if they are needed
-	'database_pass' => 'p@ssw0rd',
 	'target' => 'prod',
-	'database_patcher'	=> 'lib/deployer/database-patcher.php',
 	'datadir_patcher'	=> 'lib/deployer/datadir-patcher.php',
 
     // APC cache handling (see apc/frontcontroller_example.php for details)
