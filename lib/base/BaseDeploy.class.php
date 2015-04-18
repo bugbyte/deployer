@@ -669,9 +669,13 @@ class BaseDeploy
         $this->sshExec($remote_host, $cmd, $output, $return);
 	}
 
-	/**
-	 * Verwijdert de laatst geuploadde directory
-	 */
+    /**
+     * Verwijdert de laatst geuploadde directory
+     *
+     * @param string $remote_host
+     * @param string $remote_dir
+     * @param string $target_dir
+     */
 	protected function rollbackFiles($remote_host, $remote_dir, $target_dir)
 	{
 		$this->log('rollbackFiles', LOG_DEBUG);
@@ -681,9 +685,13 @@ class BaseDeploy
 		$this->sshExec($remote_host, 'cd '. $remote_dir .'; rm -rf '. $target_dir, $output, $return);
 	}
 
-	/**
-	 * Update de production-symlink naar de nieuwe (of oude, bij rollback) upload directory
-	 */
+    /**
+     * Update de production-symlink naar de nieuwe (of oude, bij rollback) upload directory
+     *
+     * @param string $remote_host
+     * @param string $remote_dir
+     * @param string $target_dir
+     */
 	protected function changeSymlink($remote_host, $remote_dir, $target_dir)
 	{
 		$this->log('changeSymlink', LOG_DEBUG);

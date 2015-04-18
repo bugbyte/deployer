@@ -1,8 +1,11 @@
 <?php
 
 /**
- * Berekent het root-pad van het project
+ * Calculates the root-path of the project
  *
+ * @param string $patcher_path
+ * @param string $filepath
+ * @return string
  */
 function findRootPath($patcher_path, $filepath)
 {
