@@ -210,27 +210,6 @@ class BaseDeploy
 	protected $files_to_rename = array();
 
 	/**
-	 * The project path where the deploy_timestamp.php template is located
-	 *
-	 * @var string
-	 */
-	protected $apc_deploy_version_template = null;
-
-	/**
-	 * The absolute physical path where the deploy_timestamp.php should be placed (on the remote server)
-	 *
-	 * @var string
-	 */
-	protected $apc_deploy_version_path = null;
-
-	/**
-	 * The local url (on the remote server) where setrev.php can be reached (one for each remote host)
-	 *
-	 * @var string|array
-	 */
-	protected $apc_deploy_setrev_url = null;
-
-	/**
 	 * Command paths
 	 */
 	protected $rsync_path = 'rsync';
@@ -277,26 +256,6 @@ class BaseDeploy
 
 		if (isset($options['gearman']))
 			$this->gearman = $options['gearman'];
-
-		if (isset($options['apc_deploy_version_template']) && isset($options['apc_deploy_version_path']) && isset($options['apc_deploy_setrev_url'])) {
-			$this->apc_deploy_version_template = $options['apc_deploy_version_template'];
-			$this->apc_deploy_version_path = $options['apc_deploy_version_path'];
-
-			if (!(
-					is_string($options['remote_host']) &&
-					is_string($options['apc_deploy_setrev_url'])
-				 ) &&
-				!(
-					is_array($options['remote_host']) &&
-					is_array($options['apc_deploy_setrev_url']) &&
-					count($options['remote_host']) == count($options['apc_deploy_setrev_url'])
-				 )
-			   ) {
-				throw new DeployException('apc_deploy_setrev_url must be similar to remote_host (string or array with the same number of elements)');
-			}
-
-			$this->apc_deploy_setrev_url = $options['apc_deploy_setrev_url'];
-		}
 
 		$this->rsync_path		= isset($options['rsync_path']) ? $options['rsync_path'] : trim(`which rsync`);
 		$this->ssh_path			= isset($options['ssh_path']) ? $options['ssh_path'] : trim(`which ssh`);
@@ -358,12 +317,6 @@ class BaseDeploy
 
 		if ($action == 'update')
 			$this->checkFiles(is_array($this->remote_host) ? $this->remote_host[0] : $this->remote_host, $this->remote_dir, $this->last_remote_target_dir);
-
-		if (isset($this->apc_deploy_version_template)) {
-			if (!file_exists($this->apc_deploy_version_template)) {
-				throw new DeployException("{$this->apc_deploy_version_template} does not exist.");
-			}
-		}
 
 		if ($action == 'update')
 		{
@@ -551,30 +504,7 @@ class BaseDeploy
 	 */
 	protected function clearRemoteCaches($remote_host, $remote_dir, $target_dir)
 	{
-		if (!($this->apc_deploy_version_template && $this->apc_deploy_version_path && $this->apc_deploy_setrev_url))
-			return;
-
-		// find the apc_deploy_setrev_url that belongs to this remote_host
-		$apc_deploy_setrev_url = is_array($this->apc_deploy_setrev_url)
-									? $this->apc_deploy_setrev_url[array_search($remote_host, $this->remote_host)]
-									: $this->apc_deploy_setrev_url;
-
-		$output = array();
-		$return = null;
-		$this->sshExec($remote_host,
-			"cd $remote_dir/$target_dir; ".
-				"cat {$this->apc_deploy_version_template} | ".
-				    "sed 's/#deployment_timestamp#/{$this->timestamp}/' | ".
-				    "sed 's/#deployment_project#/{$this->project_name}/' > ".
-				    "{$this->apc_deploy_version_path}.tmp; ".
-				"mv {$this->apc_deploy_version_path}.tmp {$this->apc_deploy_version_path}; ".
-				"curl -s -S '{$apc_deploy_setrev_url}?rev={$this->timestamp}&project={$this->project_name}'",
-			$output, $return);
-
-		$this->log($output);
-
-		if ($return != 0)
-			$this->log("$remote_host: Clear cache failed");
+        $this->log("clearRemoteCaches($remote_host, $remote_dir, $target_dir", LOG_DEBUG);
 	}
 
 	/**
