@@ -17,7 +17,7 @@ See [example.php](https://github.com/bugbyte/deployer/blob/master/example.php) f
 # Requirements
 
 - Linux or FreeBSD (on both the local and the remote server)
-- SSH & RSync access to the remote server, preferably with public key auth (or you'll be typing your password **a lot**.
+- SSH & RSync access to the remote server, preferably with public key auth (or you'll be typing your password **a lot**).
 - PHP CLI 5.2+ (on both the local and remote servers)
 
 # Workings
@@ -33,17 +33,17 @@ After all file-stuff is done, a symlink called "production" is created, pointing
 
 There are several stub methods in place to allow you to easily hook custom code into some steps of the deployment process.
 - preDeploy
+- preActivate
 - postDeploy
 - preRollback
+- postDeactivate
 - postRollback
 - clearRemoteCaches
 
 In case of trouble, you can rollback to the previous deploy in only a few seconds.  
 The "production"-symlink is changed back and the new deployment is deleted.
 
-This tool can also handle database updates. The current way is rather primitive however, relying solely on deployment timestamps. When branching and merging often this becomes cumbersome quickly.  
-
-In the databasemanager branch (currently being developed at [LemonWeb](https://github.com/LemonWeb/deployer/tree/databasemanager)) a new way using a patch registry within the database is being implemented. This will be released as version 2.x when it's finished.
+For automating database updates, have a look at [LemonWeb/dbpatcher](https://github.com/LemonWeb/deployer/tree/dbpatcher)).
 
 # Todo
 
