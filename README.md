@@ -12,7 +12,7 @@ If you can't or don't want to use Composer (oh come on..) you can just download 
 
 # Usage
 
-See [example.php](https://github.com/bugbyte/deployer/blob/master/example.php) for a simple setup.
+See [example.php](example.php) for a simple setup.
 
 # Requirements
 
@@ -43,7 +43,7 @@ There are several stub methods in place to allow you to easily hook custom code 
 In case of trouble, you can rollback to the previous deploy in only a few seconds.  
 The "production"-symlink is changed back and the new deployment is deleted.
 
-For automating database updates, have a look at [LemonWeb/dbpatcher](https://github.com/LemonWeb/deployer/tree/dbpatcher)).
+For automating database updates, have a look at [LemonWeb/deployer](https://github.com/LemonWeb/deployer)).
 
 # Todo
 
