@@ -55,6 +55,6 @@ class RestartGearmanWorkers extends Command
         $client->addServer($ip, $port);
         $client->doBackground($function, $workload);
 
-        $output->writeln("done");
+        $output->writeln('done');
     }
 }

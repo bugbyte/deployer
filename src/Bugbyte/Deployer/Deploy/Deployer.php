@@ -3,13 +3,21 @@
 namespace Bugbyte\Deployer\Deploy;
 
 use Bugbyte\Deployer\Exception\DeployException;
+use Symfony\Component\Console\Helper\QuestionHelper;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 /**
  * The deployer
  */
 class Deployer
 {
+    /**
+     * @var InputInterface
+     */
+    protected $input;
+
     /**
      * @var OutputInterface
      */
@@ -229,11 +237,13 @@ class Deployer
     /**
      * Bouwt een nieuwe Deploy class op met de gegeven opties
      *
+     * @param InputInterface $input
      * @param OutputInterface $output
      * @param array $options
      */
-    public function __construct(OutputInterface $output, array $options)
+    public function __construct(InputInterface $input, OutputInterface $output, array $options)
     {
+        $this->input = $input;
         $this->output = $output;
 
         $this->project_name = $options['project_name'];
@@ -303,6 +313,7 @@ class Deployer
             return;
 
         $this->initialize();
+        $this->input = $input;
     }
 
     /**
@@ -389,11 +400,17 @@ class Deployer
 
         // als alles goed is gegaan kan er doorgegaan worden met de deployment
         if ($action == 'update') {
-            return static::inputPrompt('Proceed with deployment? (yes/no): ', 'no') == 'yes';
+            $questionHelper = new QuestionHelper();
+            $question = new ConfirmationQuestion('Proceed with deployment ? (y/[n]) ', !$this->input->isInteractive());
+
+            return $questionHelper->ask($this->input, $this->output, $question);
         }
 
         if ($action == 'rollback') {
-            return static::inputPrompt('Proceed with rollback? (yes/no): ', 'no') == 'yes';
+            $questionHelper = new QuestionHelper();
+            $question = new ConfirmationQuestion('Proceed with rollback ? (y/[n]) ', !$this->input->isInteractive());
+
+            return $questionHelper->ask($this->input, $this->output, $question);
         }
 
         return false;
@@ -521,7 +538,10 @@ class Deployer
         }
 
         if (!empty($past_deployments)) {
-            if (static::inputPrompt('Delete old directories? (yes/no): ', 'no') == 'yes') {
+            $questionHelper = new QuestionHelper();
+            $question = new ConfirmationQuestion('Delete old directories ? (y/[n]) ', !$this->input->isInteractive());
+
+            if ($questionHelper->ask($this->input, $this->output, $question)) {
                 $this->deletePastDeployments($past_deployments);
             }
         } else {
@@ -1057,32 +1077,6 @@ class Deployer
     }
 
     /**
-     * Asks the user for input
-     *
-     * @param string $message
-     * @param string $default
-     * @param boolean $isPassword
-     * @return string
-     */
-    static protected function inputPrompt($message, $default = '', $isPassword = false)
-    {
-        fwrite(STDOUT, $message);
-
-        if (!$isPassword) {
-            $input = trim(fgets(STDIN));
-        } else {
-            $input = self::getPassword(false);
-            echo PHP_EOL;
-        }
-
-        if ($input == '') {
-            $input = $default;
-        }
-
-        return $input;
-    }
-
-    /**
      * Stub method for code to be run *before* deployment
      *
      * @param string $remote_host
@@ -1156,50 +1150,5 @@ class Deployer
         $this->log("postRollback($remote_host, $remote_dir, $target_dir)", LOG_DEBUG);
 
         $this->restartGearmanWorkers($remote_host, $remote_dir, $target_dir);
-    }
-
-    /**
-     * Get a password from the shell.
-     *
-     * This function works on *nix systems only and requires shell_exec and stty.
-     *
-     * @author http://www.dasprids.de/blog/2008/08/22/getting-a-password-hidden-from-stdin-with-php-cli
-     * @param  boolean $stars Wether or not to output stars for given characters
-     * @return string
-     */
-    static protected function getPassword($stars = false)
-    {
-        // Get current style
-        $oldStyle = shell_exec('stty -g');
-
-        if ($stars === false) {
-            shell_exec('stty -echo');
-            $password = rtrim(fgets(STDIN), "\n");
-        } else {
-            shell_exec('stty -icanon -echo min 1 time 0');
-
-            $password = '';
-            while (true) {
-                $char = fgetc(STDIN);
-
-                if ($char === "\n") {
-                    break;
-                } else if (ord($char) === 127) {
-                    if (strlen($password) > 0) {
-                        fwrite(STDOUT, "\x08 \x08");
-                        $password = substr($password, 0, -1);
-                    }
-                } else {
-                    fwrite(STDOUT, "*");
-                    $password .= $char;
-                }
-            }
-        }
-
-        // Reset old style
-        shell_exec('stty ' . $oldStyle);
-
-        // Return the password
-        return $password;
     }
 }
