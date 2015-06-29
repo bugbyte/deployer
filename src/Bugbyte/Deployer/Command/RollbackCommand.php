@@ -11,17 +11,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @method DeployApplication getApplication()
  */
-class DeployCommand extends Command
+class RollbackCommand extends Command
 {
     protected function configure()
     {
         $this
-            ->setName('deploy')
-            ->setDescription('Deploys the project to a remote location')
+            ->setName('rollback')
+            ->setDescription('Rollback to the previous deployment')
             ->addArgument(
                 'target',
                 InputArgument::OPTIONAL,
-                'The environment to deploy to'
+                'The environment to roll back'
             );
     }
 
@@ -34,6 +34,6 @@ class DeployCommand extends Command
         }
 
         $deploy = new \Deploy($config);
-        $deploy->deploy();
+        $deploy->rollback();
     }
 }

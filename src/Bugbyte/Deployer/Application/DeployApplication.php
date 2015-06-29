@@ -2,21 +2,35 @@
 
 namespace Bugbyte\Deployer\Application;
 
+use Bugbyte\Deployer\Command\CleanupCommand;
 use Bugbyte\Deployer\Command\DeployCommand;
+use Bugbyte\Deployer\Command\RollbackCommand;
 use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Input\InputInterface;
 
 class DeployApplication extends Application
 {
-    public function __construct($config)
+    /**
+     * @var array
+     */
+    protected $config;
+
+    public function __construct(array $config)
     {
         parent::__construct();
 
-        $this->add(new DeployCommand($config));
+        $this->config = $config;
+
+        $this->add(new DeployCommand());
+        $this->add(new RollbackCommand());
+        $this->add(new CleanupCommand());
     }
 
-    protected function getCommandName(InputInterface $input)
+    /**
+     * @return array
+     */
+    public function getConfig()
     {
-        return 'deploy';
+        return $this->config;
     }
+
 }

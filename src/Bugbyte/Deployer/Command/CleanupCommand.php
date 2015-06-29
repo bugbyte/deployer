@@ -11,17 +11,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @method DeployApplication getApplication()
  */
-class DeployCommand extends Command
+class CleanupCommand extends Command
 {
     protected function configure()
     {
         $this
-            ->setName('deploy')
+            ->setName('cleanup')
             ->setDescription('Deploys the project to a remote location')
             ->addArgument(
                 'target',
                 InputArgument::OPTIONAL,
-                'The environment to deploy to'
+                'The environment to clean up'
             );
     }
 
@@ -34,6 +34,6 @@ class DeployCommand extends Command
         }
 
         $deploy = new \Deploy($config);
-        $deploy->deploy();
+        $deploy->cleanup();
     }
 }
