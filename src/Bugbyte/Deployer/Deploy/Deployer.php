@@ -268,7 +268,7 @@ class Deployer
         if (isset($options['gearman_restarter'])) {
             $this->gearman_restarter = $options['gearman_restarter'];
         } else {
-            $this->datadir_patcher = $_SERVER['argv'][0] . ' deployer:restartgearmanworkers';
+            $this->gearman_restarter = $_SERVER['argv'][0] . ' deployer:restartgearmanworkers';
         }
 
         if (isset($options['auto_init'])) {
