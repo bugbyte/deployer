@@ -36,7 +36,7 @@ class Deployer
      *
      * @var string
      */
-    protected $remote_dir_format = '%project_name%_%timestamp%';
+    const REMOTE_DIR_FORMAT = '%project_name%_%timestamp%';
 
     /**
      * Date format in the name of the deployment directories
@@ -44,7 +44,7 @@ class Deployer
      *
      * @var string
      */
-    protected $remote_dir_timestamp_format = 'Y-m-d_His';
+    const REMOTE_DIR_TIMESTAMP_FORMAT = 'Y-m-d_His';
 
     /**
      * The codename of the application
@@ -332,9 +332,9 @@ class Deployer
         $remote_host = is_array($this->remote_host) ? $this->remote_host[0] : $this->remote_host;
 
         $this->timestamp = time();
-        $this->remote_target_dir = strtr($this->remote_dir_format, array(
+        $this->remote_target_dir = strtr(self::REMOTE_DIR_FORMAT, array(
                                         '%project_name%' => $this->project_name,
-                                        '%timestamp%' => date($this->remote_dir_timestamp_format, $this->timestamp))
+                                        '%timestamp%' => date(self::REMOTE_DIR_TIMESTAMP_FORMAT, $this->timestamp))
                                    );
 
         if ($timestamps = $this->findPastDeploymentTimestamps($remote_host, $this->remote_dir)) {
@@ -342,16 +342,16 @@ class Deployer
         }
 
         if ($this->previous_timestamp) {
-            $this->previous_remote_target_dir = strtr($this->remote_dir_format, array(
+            $this->previous_remote_target_dir = strtr(self::REMOTE_DIR_FORMAT, array(
                                                     '%project_name%' => $this->project_name,
-                                                    '%timestamp%' => date($this->remote_dir_timestamp_format, $this->previous_timestamp))
+                                                    '%timestamp%' => date(self::REMOTE_DIR_TIMESTAMP_FORMAT, $this->previous_timestamp))
                                                 );
         }
 
         if ($this->last_timestamp) {
-            $this->last_remote_target_dir = strtr($this->remote_dir_format, array(
+            $this->last_remote_target_dir = strtr(self::REMOTE_DIR_FORMAT, array(
                                                     '%project_name%' => $this->project_name,
-                                                    '%timestamp%' => date($this->remote_dir_timestamp_format, $this->last_timestamp))
+                                                    '%timestamp%' => date(self::REMOTE_DIR_TIMESTAMP_FORMAT, $this->last_timestamp))
                                             );
         }
     }
