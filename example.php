@@ -4,7 +4,7 @@ require __DIR__ . '/../../autoload.php';
 
 use Bugbyte\Deployer\Application\DeployApplication;
 
-$application = new DeployApplication(array(
+$config = array(
     'project_name' => 'project',
     'basedir' => dirname(__FILE__), // the root dir of the project
     'remote_host' => 'www.example.com', // can also be: array('serv1.example.com', 'serv2.example.com')
@@ -22,5 +22,7 @@ $application = new DeployApplication(array(
     ),
     'target' => 'prod',
     'datadir_patcher' => 'lib/deployer/datadir-patcher.php',
-));
+);
+
+$application = new DeployApplication($config);
 $application->run();
