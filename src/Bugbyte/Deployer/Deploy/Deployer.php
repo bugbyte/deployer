@@ -406,14 +406,14 @@ class Deployer
         // als alles goed is gegaan kan er doorgegaan worden met de deployment
         if ($action == 'update') {
             $questionHelper = new QuestionHelper();
-            $question = new ConfirmationQuestion('Proceed with deployment ? (y/[n]) ', !$this->input->isInteractive());
+            $question = new ConfirmationQuestion('<question>Proceed with deployment ? (y/[n])</question> ', !$this->input->isInteractive());
 
             return $questionHelper->ask($this->input, $this->output, $question);
         }
 
         if ($action == 'rollback') {
             $questionHelper = new QuestionHelper();
-            $question = new ConfirmationQuestion('Proceed with rollback ? (y/[n]) ', !$this->input->isInteractive());
+            $question = new ConfirmationQuestion('<question>Proceed with rollback ? (y/[n])</question> ', !$this->input->isInteractive());
 
             return $questionHelper->ask($this->input, $this->output, $question);
         }
@@ -544,7 +544,7 @@ class Deployer
 
         if (!empty($past_deployments)) {
             $questionHelper = new QuestionHelper();
-            $question = new ConfirmationQuestion('Delete old directories ? (y/[n]) ', !$this->input->isInteractive());
+            $question = new ConfirmationQuestion('<question>Delete old directories ? (y/[n])</question> ', !$this->input->isInteractive());
 
             if ($questionHelper->ask($this->input, $this->output, $question)) {
                 $this->deletePastDeployments($past_deployments);
