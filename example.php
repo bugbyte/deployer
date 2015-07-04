@@ -16,12 +16,11 @@ $config = array(
         'web/uploads',
         'logs'
     ),
+    'target' => 'prod',
     'target_specific_files' => array( // list of files that will be renamed on the remote host
         'web/.htaccess',
         'config/database.php'
     ),
-    'target' => 'prod',
-    'datadir_patcher' => 'lib/deployer/datadir-patcher.php',
 );
 
 $application = new DeployApplication($config);

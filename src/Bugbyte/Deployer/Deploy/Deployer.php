@@ -234,32 +234,43 @@ class Deployer
         $this->target = $options['target'];
         $this->remote_dir = $options['remote_dir'] .'/'. $this->target;
 
-        if (isset($options['remote_port']))
+        if (isset($options['remote_port'])) {
             $this->remote_port = $options['remote_port'];
+        }
 
-        if (isset($options['rsync_excludes']))
-            $this->rsync_excludes = (array) $options['rsync_excludes'];
+        if (isset($options['rsync_excludes'])) {
+            $this->rsync_excludes = (array)$options['rsync_excludes'];
+        }
 
-        if (isset($options['logfile']))
+        if (isset($options['logfile'])) {
             $this->logfile = $options['logfile'];
+        }
 
-        if (isset($options['data_dirs']))
+        if (isset($options['data_dirs'])) {
             $this->data_dirs = $options['data_dirs'];
+        }
 
-        if (isset($options['datadir_patcher']))
+        if (isset($options['datadir_patcher'])) {
             $this->datadir_patcher = $options['datadir_patcher'];
+        } else {
+            $this->datadir_patcher = $_SERVER['argv'][0] . ' deployer:fixdatadirs';
+        }
 
-        if (isset($options['gearman_restarter']))
+        if (isset($options['gearman_restarter'])) {
             $this->gearman_restarter = $options['gearman_restarter'];
+        }
 
-        if (isset($options['auto_init']))
+        if (isset($options['auto_init'])) {
             $this->auto_init = $options['auto_init'];
+        }
 
-        if (isset($options['target_specific_files']))
+        if (isset($options['target_specific_files'])) {
             $this->target_specific_files = $options['target_specific_files'];
+        }
 
-        if (isset($options['gearman']))
+        if (isset($options['gearman'])) {
             $this->gearman = $options['gearman'];
+        }
 
         $this->rsync_path = isset($options['rsync_path']) ? $options['rsync_path'] : trim(`which rsync`);
         $this->ssh_path = isset($options['ssh_path']) ? $options['ssh_path'] : trim(`which ssh`);
@@ -403,7 +414,10 @@ class Deployer
             $this->clearRemoteCaches($this->remote_host, $this->remote_dir, $this->remote_target_dir);
         }
 
-        $this->cleanup();
+        // if previous deployments exist, check if the remote needs to be cleaned up
+        if ($this->last_remote_target_dir) {
+            $this->cleanup();
+        }
     }
 
     /**
@@ -563,7 +577,13 @@ class Deployer
 
         $this->log('Creating data dir symlinks:', LOG_DEBUG);
 
-        $cmd = "cd $remote_dir/{$target_dir}; php {$this->datadir_patcher} --datadir-prefix={$this->data_dir_prefix} --previous-dir={$this->last_remote_target_dir} ". implode(' ', $this->data_dirs);
+        $cmd = "cd $remote_dir/{$target_dir}; php {$this->datadir_patcher} --datadir-prefix={$this->data_dir_prefix} ";
+
+        if ($this->last_remote_target_dir) {
+            $cmd .= "--previous-dir={$this->last_remote_target_dir} ";
+        }
+
+        $cmd .= implode(' ', $this->data_dirs);
 
         $output = array();
         $return = null;
@@ -630,9 +650,17 @@ class Deployer
     {
         $this->log('changeSymlink', LOG_DEBUG);
 
+        $command = "cd $remote_dir; ";
+
+        if ($this->last_remote_target_dir) {
+            $command .= "rm production; ";
+        }
+
+        $command .= "ln -s {$target_dir} production";
+
         $output = array();
         $return = null;
-        $this->sshExec($remote_host, "cd $remote_dir; rm production; ln -s {$target_dir} production", $output, $return);
+        $this->sshExec($remote_host, $command, $output, $return);
     }
 
     /**
