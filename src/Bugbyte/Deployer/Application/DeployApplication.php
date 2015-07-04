@@ -5,6 +5,7 @@ namespace Bugbyte\Deployer\Application;
 use Bugbyte\Deployer\Command\Cleanup;
 use Bugbyte\Deployer\Command\Deploy;
 use Bugbyte\Deployer\Command\FixDataDirs;
+use Bugbyte\Deployer\Command\RestartGearmanWorkers;
 use Bugbyte\Deployer\Command\Rollback;
 use Symfony\Component\Console\Application;
 
@@ -25,6 +26,7 @@ class DeployApplication extends Application
         $this->add(new Rollback());
         $this->add(new Cleanup());
         $this->add(new FixDataDirs());
+        $this->add(new RestartGearmanWorkers());
     }
 
     /**

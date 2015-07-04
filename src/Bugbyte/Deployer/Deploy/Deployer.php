@@ -197,8 +197,8 @@ class Deployer
      *             array('ip' => ipadres, 'port' => gearmanport)
      *         ),
      *         'workers' => array(
-     *             'functienaam1',
-     *             'functienaam2',
+     *             'functienaam1' => 'reboot',
+     *             'functienaam2' => 'reboot,
      *         )
      *     )
      *
@@ -258,6 +258,8 @@ class Deployer
 
         if (isset($options['gearman_restarter'])) {
             $this->gearman_restarter = $options['gearman_restarter'];
+        } else {
+            $this->datadir_patcher = $_SERVER['argv'][0] . ' deployer:restartgearmanworkers';
         }
 
         if (isset($options['auto_init'])) {
@@ -610,10 +612,10 @@ class Deployer
         $cmd = "cd $remote_dir/{$target_dir}; ";
 
         foreach ($this->gearman['servers'] as $server) {
-            foreach ($this->gearman['workers'] as $worker) {
-                $worker = sprintf($worker, $this->target);
+            foreach ($this->gearman['workers'] as $function => $workload) {
+                $function = sprintf($function, $this->target);
 
-                $cmd .= "php {$this->gearman_restarter} --ip={$server['ip']} --port={$server['port']} --function=$worker; ";
+                $cmd .= "php {$this->gearman_restarter} --ip={$server['ip']} --port={$server['port']} $function $workload";
             }
         }
 
