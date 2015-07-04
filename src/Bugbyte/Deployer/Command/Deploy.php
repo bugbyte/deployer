@@ -3,7 +3,7 @@
 namespace Bugbyte\Deployer\Command;
 
 use Bugbyte\Deployer\Application\DeployApplication;
-use Bugbyte\Deployer\Deploy\Deploy;
+use Bugbyte\Deployer\Deploy\Deployer;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -12,17 +12,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @method DeployApplication getApplication()
  */
-class RollbackCommand extends Command
+class Deploy extends Command
 {
     protected function configure()
     {
         $this
-            ->setName('deployer:rollback')
-            ->setDescription('Rollback to the previous deployment')
+            ->setName('deployer:deploy')
+            ->setDescription('Deploys the project to a remote location')
             ->addArgument(
                 'target',
                 InputArgument::OPTIONAL,
-                'The environment to roll back'
+                'The environment to deploy to'
             );
     }
 
@@ -34,7 +34,7 @@ class RollbackCommand extends Command
             $config['target'] = $target;
         }
 
-        $deploy = new Deploy($config);
-        $deploy->rollback();
+        $deploy = new Deployer($config);
+        $deploy->deploy();
     }
 }

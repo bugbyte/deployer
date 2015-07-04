@@ -7,7 +7,7 @@ use Bugbyte\Deployer\Exception\DeployException;
 /**
  * The deployer
  */
-class Deploy
+class Deployer
 {
     /**
      * If the deployer is run in debugging mode (more verbose output)

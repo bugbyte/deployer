@@ -2,9 +2,9 @@
 
 namespace Bugbyte\Deployer\Application;
 
-use Bugbyte\Deployer\Command\CleanupCommand;
-use Bugbyte\Deployer\Command\DeployCommand;
-use Bugbyte\Deployer\Command\RollbackCommand;
+use Bugbyte\Deployer\Command\Cleanup;
+use Bugbyte\Deployer\Command\Deploy;
+use Bugbyte\Deployer\Command\Rollback;
 use Symfony\Component\Console\Application;
 
 class DeployApplication extends Application
@@ -20,9 +20,9 @@ class DeployApplication extends Application
 
         $this->config = $config;
 
-        $this->add(new DeployCommand());
-        $this->add(new RollbackCommand());
-        $this->add(new CleanupCommand());
+        $this->add(new Deploy());
+        $this->add(new Rollback());
+        $this->add(new Cleanup());
     }
 
     /**

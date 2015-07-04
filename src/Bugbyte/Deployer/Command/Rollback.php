@@ -3,7 +3,7 @@
 namespace Bugbyte\Deployer\Command;
 
 use Bugbyte\Deployer\Application\DeployApplication;
-use Bugbyte\Deployer\Deploy\Deploy;
+use Bugbyte\Deployer\Deploy\Deployer;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -12,17 +12,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @method DeployApplication getApplication()
  */
-class CleanupCommand extends Command
+class Rollback extends Command
 {
     protected function configure()
     {
         $this
-            ->setName('deployer:cleanup')
-            ->setDescription('Deploys the project to a remote location')
+            ->setName('deployer:rollback')
+            ->setDescription('Rollback to the previous deployment')
             ->addArgument(
                 'target',
                 InputArgument::OPTIONAL,
-                'The environment to clean up'
+                'The environment to roll back'
             );
     }
 
@@ -34,7 +34,7 @@ class CleanupCommand extends Command
             $config['target'] = $target;
         }
 
-        $deploy = new Deploy($config);
-        $deploy->cleanup();
+        $deploy = new Deployer($config);
+        $deploy->rollback();
     }
 }

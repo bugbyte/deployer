@@ -3,7 +3,7 @@
 namespace Bugbyte\Deployer\Command;
 
 use Bugbyte\Deployer\Application\DeployApplication;
-use Bugbyte\Deployer\Deploy\Deploy;
+use Bugbyte\Deployer\Deploy\Deployer;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -12,17 +12,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @method DeployApplication getApplication()
  */
-class DeployCommand extends Command
+class Cleanup extends Command
 {
     protected function configure()
     {
         $this
-            ->setName('deployer:deploy')
+            ->setName('deployer:cleanup')
             ->setDescription('Deploys the project to a remote location')
             ->addArgument(
                 'target',
                 InputArgument::OPTIONAL,
-                'The environment to deploy to'
+                'The environment to clean up'
             );
     }
 
@@ -34,7 +34,7 @@ class DeployCommand extends Command
             $config['target'] = $target;
         }
 
-        $deploy = new Deploy($config);
-        $deploy->deploy();
+        $deploy = new Deployer($config);
+        $deploy->cleanup();
     }
 }
