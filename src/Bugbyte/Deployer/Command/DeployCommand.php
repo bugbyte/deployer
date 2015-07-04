@@ -3,6 +3,7 @@
 namespace Bugbyte\Deployer\Command;
 
 use Bugbyte\Deployer\Application\DeployApplication;
+use Bugbyte\Deployer\Deploy\Deploy;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -33,7 +34,7 @@ class DeployCommand extends Command
             $config['target'] = $target;
         }
 
-        $deploy = new \Deploy($config);
+        $deploy = new Deploy($config);
         $deploy->deploy();
     }
 }

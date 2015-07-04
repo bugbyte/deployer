@@ -9,7 +9,6 @@
     "description": "A website deployment tool",
     "license": "MIT",
     "autoload": {
-        "classmap": ["lib/"],
         "psr-0": {
           "Bugbyte": "src/"
         }

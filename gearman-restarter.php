@@ -1,9 +1,6 @@
 <?php
 
-require dirname(__FILE__) .'/lib/patcher_functions.class.php';
-require dirname(__FILE__) .'/lib/base/BaseDeploy.class.php';
-require dirname(__FILE__) .'/lib/Deploy.class.php';
-require dirname(__FILE__) .'/lib/exceptions/DeployException.class.php';
+require dirname(__FILE__) . '/lib/patcher_functions.php';
 
 $args = parseArgs($_SERVER['argv']);
 

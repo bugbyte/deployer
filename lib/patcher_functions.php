@@ -9,7 +9,7 @@
  */
 function findRootPath($patcher_path, $filepath)
 {
-	return preg_replace('#/+$#', '', str_replace($patcher_path, '', $filepath));
+    return preg_replace('#/+$#', '', str_replace($patcher_path, '', $filepath));
 }
 
 /**
