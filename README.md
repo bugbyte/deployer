@@ -4,7 +4,7 @@ The easiest way is to use Composer:
 
     {
         "require": {
-            "bugbyte/deployer": "1.0.*"
+            "bugbyte/deployer": "2.x@dev"
         }
     }
 
