@@ -218,6 +218,7 @@ class Deployer
      */
     protected $rsync_path = 'rsync';
     protected $ssh_path = 'ssh';
+    protected $remote_php_path = 'php';
 
     /**
      * Bouwt een nieuwe Deploy class op met de gegeven opties
@@ -274,8 +275,21 @@ class Deployer
             $this->gearman = $options['gearman'];
         }
 
-        $this->rsync_path = isset($options['rsync_path']) ? $options['rsync_path'] : trim(`which rsync`);
-        $this->ssh_path = isset($options['ssh_path']) ? $options['ssh_path'] : trim(`which ssh`);
+        if (isset($options['rsync_path'])) {
+            $this->rsync_path = $options['rsync_path'];
+        } else {
+            $this->rsync_path = trim(`which rsync`);
+        }
+
+        if (isset($options['ssh_path'])) {
+            $this->ssh_path = $options['ssh_path'];
+        } else {
+            $this->ssh_path = trim(`which ssh`);
+        }
+
+        if (isset($options['remote_php_path'])) {
+            $this->remote_php_path = $options['remote_php_path'];
+        }
 
         if (!$this->auto_init)
             return;
@@ -579,7 +593,7 @@ class Deployer
 
         $this->log('Creating data dir symlinks:', LOG_DEBUG);
 
-        $cmd = "cd $remote_dir/{$target_dir}; php {$this->datadir_patcher} --datadir-prefix={$this->data_dir_prefix} ";
+        $cmd = "cd $remote_dir/{$target_dir}; {$this->remote_php_path} {$this->datadir_patcher} --datadir-prefix={$this->data_dir_prefix} ";
 
         if ($this->last_remote_target_dir) {
             $cmd .= "--previous-dir={$this->last_remote_target_dir} ";
@@ -615,7 +629,7 @@ class Deployer
             foreach ($this->gearman['workers'] as $function => $workload) {
                 $function = sprintf($function, $this->target);
 
-                $cmd .= "php {$this->gearman_restarter} --ip={$server['ip']} --port={$server['port']} $function $workload";
+                $cmd .= "{$this->remote_php_path} {$this->gearman_restarter} --ip={$server['ip']} --port={$server['port']} $function $workload";
             }
         }
 
