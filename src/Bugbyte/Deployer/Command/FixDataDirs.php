@@ -25,7 +25,8 @@ class FixDataDirs extends Command
             ->addOption(
                 'previous-dir',
                 null,
-                InputOption::VALUE_OPTIONAL
+                InputOption::VALUE_OPTIONAL,
+                'The directory of the previous deployment'
             )
             ->addArgument(
                 'data-dirs',
