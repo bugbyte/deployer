@@ -17,7 +17,7 @@ class CleanupCommand extends Command
     protected function configure()
     {
         $this
-            ->setName('cleanup')
+            ->setName('deployer:cleanup')
             ->setDescription('Deploys the project to a remote location')
             ->addArgument(
                 'target',

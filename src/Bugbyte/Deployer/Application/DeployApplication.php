@@ -16,7 +16,7 @@ class DeployApplication extends Application
 
     public function __construct(array $config)
     {
-        parent::__construct();
+        parent::__construct('Bugbyte Deployer', '2.x');
 
         $this->config = $config;
 

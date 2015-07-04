@@ -17,7 +17,7 @@ class RollbackCommand extends Command
     protected function configure()
     {
         $this
-            ->setName('rollback')
+            ->setName('deployer:rollback')
             ->setDescription('Rollback to the previous deployment')
             ->addArgument(
                 'target',

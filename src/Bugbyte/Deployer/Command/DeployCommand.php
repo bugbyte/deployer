@@ -17,7 +17,7 @@ class DeployCommand extends Command
     protected function configure()
     {
         $this
-            ->setName('deploy')
+            ->setName('deployer:deploy')
             ->setDescription('Deploys the project to a remote location')
             ->addArgument(
                 'target',
