@@ -7,6 +7,7 @@ use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Process\ExecutableFinder;
 
 /**
  * The deployer
@@ -296,13 +297,17 @@ class Deployer
         if (isset($options['rsync_path'])) {
             $this->rsync_path = $options['rsync_path'];
         } else {
-            $this->rsync_path = trim(`which rsync`);
+            $executableFinder = new ExecutableFinder();
+
+            $this->rsync_path = $executableFinder->find('rsync');
         }
 
         if (isset($options['ssh_path'])) {
             $this->ssh_path = $options['ssh_path'];
         } else {
-            $this->ssh_path = trim(`which ssh`);
+            $executableFinder = new ExecutableFinder();
+
+            $this->ssh_path = $executableFinder->find('ssh');
         }
 
         if (isset($options['remote_php_path'])) {
