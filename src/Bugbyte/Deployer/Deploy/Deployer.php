@@ -3,11 +3,13 @@
 namespace Bugbyte\Deployer\Deploy;
 
 use Bugbyte\Deployer\Exception\DeployException;
+use Symfony\Component\Console\Helper\FormatterHelper;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Process\ExecutableFinder;
+use Symfony\Component\Process\ProcessBuilder;
 
 /**
  * The deployer
@@ -267,7 +269,7 @@ class Deployer
         }
 
         if (isset($options['data_dirs'])) {
-            $this->data_dirs = $options['data_dirs'];
+            $this->data_dirs = (array) $options['data_dirs'];
         }
 
         if (isset($options['datadir_patcher'])) {
@@ -685,36 +687,52 @@ class Deployer
 
         $output = array();
         $return = null;
-        $this->sshExec($remote_host, 'cd '. $remote_dir .'; rm -rf '. $target_dir, $output, $return);
+        $this->sshExec($remote_host, 'cd ' . $remote_dir . '; rm -rf ' . $target_dir, $output, $return);
     }
 
     /**
-     * Update de production-symlink naar de nieuwe (of oude, bij rollback) upload directory
+     * Update the production-symlink to the target dir, which is the directory of the new deployment, or the previous (during rollback).
      *
      * @param string $remote_host
      * @param string $remote_dir
      * @param string $target_dir
+     * @throws DeployException
      */
     protected function changeSymlink($remote_host, $remote_dir, $target_dir)
     {
         $this->log('changeSymlink', LOG_DEBUG);
 
-        $command = "cd $remote_dir; ";
+        $processBuilder = ProcessBuilder::create()
+            ->add($this->ssh_path)->add('-p')->add($this->remote_port)->add($this->remote_user . '@' . $remote_host)
+            ->add('cd')->add("$remote_dir;");
 
         if ($this->last_remote_target_dir) {
-            $command .= "rm production; ";
+            $processBuilder->add('rm')->add('production;');
         }
 
-        $command .= "ln -s {$target_dir} production";
+        $process = $processBuilder
+            ->add('ln')->add('-s')->add($target_dir)->add('production')
+            ->getProcess();
 
-        $output = array();
-        $return = null;
-        $this->sshExec($remote_host, $command, $output, $return);
+        $process->mustRun();
+
+//        $command = "cd $remote_dir; ";
+
+//        if ($this->last_remote_target_dir) {
+//            $command .= "rm production; ";
+//        }
+//
+//        $command .= "ln -s {$target_dir} production";
+//
+//        $output = array();
+//        $return = null;
+//        $this->sshExec($remote_host, $command, $output, $return);
     }
 
     /**
      * @param string $remote_host
      * @param string $remote_dir
+     * @throws DeployException
      */
     protected function renameTargetFiles($remote_host, $remote_dir)
     {
@@ -722,16 +740,28 @@ class Deployer
             return;
         }
 
-        // configfiles verplaatsen
-        $target_files_to_move = '';
+        $processBuilder = ProcessBuilder::create()
+            ->add($this->ssh_path)->add('-p')->add($this->remote_port)->add($this->remote_user . '@' . $remote_host)
+            ->add('cd')->add("$remote_dir/{$this->remote_target_dir};");
 
         foreach ($files_to_move as $newpath => $currentpath) {
-            $target_files_to_move .= "mv $currentpath $newpath; ";
+            $processBuilder->add('mv')->add("$currentpath $newpath;");
         }
 
-        $output = array();
-        $return = null;
-        $this->sshExec($remote_host, "cd {$remote_dir}/{$this->remote_target_dir}; $target_files_to_move", $output, $return);
+        $process = $processBuilder->getProcess();
+
+        $process->mustRun();
+
+        // configfiles verplaatsen
+//        $target_files_to_move = '';
+
+//        foreach ($files_to_move as $newpath => $currentpath) {
+//            $target_files_to_move .= "mv $currentpath $newpath; ";
+//        }
+
+//        $output = array();
+//        $return = null;
+//        $this->sshExec($remote_host, "cd {$remote_dir}/{$this->remote_target_dir}; $target_files_to_move", $output, $return);
     }
 
     /**
@@ -865,26 +895,33 @@ class Deployer
      *
      * @param string $remote_host
      * @param string $remote_dir
+     * @throws DeployException
      */
     protected function prepareRemoteDirectory($remote_host, $remote_dir)
     {
-        $this->log('Initialize remote directory: '. $remote_host .':'. $remote_dir, LOG_INFO, true);
+        $this->log('Initialize remote project root: '. $remote_host .':'. $remote_dir, LOG_INFO, true);
 
-        $output = array();
-        $return = null;
-        $this->sshExec($remote_host, "mkdir -p $remote_dir", $output, $return, '', '', LOG_DEBUG);
+        $createRemoteDir = ProcessBuilder::create()
+            ->add($this->ssh_path)->add('-p')->add($this->remote_port)->add($this->remote_user . '@' . $remote_host)
+            ->add('mkdir')->add('-p')->add($remote_dir)
+            ->getProcess();
+
+        $createRemoteDir->mustRun();
 
         if (empty($this->data_dirs)) {
             return;
         }
 
-        $data_dirs = count($this->data_dirs) > 1 ? '{'. implode(',', $this->data_dirs) .'}' : implode(',', $this->data_dirs);
+        $this->log('Initialize remote data directories: '. $remote_host .':'. $remote_dir, LOG_INFO, true);
 
-        $cmd = "mkdir -v -m 0775 -p $remote_dir/{$this->data_dir_prefix}/$data_dirs";
+        $data_dirs = count($this->data_dirs) > 1 ? '{'. implode(',', $this->data_dirs) .'}' : implode('', $this->data_dirs);
 
-        $output = array();
-        $return = null;
-        $this->sshExec($remote_host, $cmd, $output, $return, '', '', LOG_DEBUG);
+        $process = ProcessBuilder::create()
+            ->add($this->ssh_path)->add('-p')->add($this->remote_port)->add($this->remote_user . '@' . $remote_host)
+            ->add('mkdir')->add('-p')->add('-v')->add('-m')->add('0775')->add('-p')->add("$remote_dir/{$this->data_dir_prefix}/$data_dirs")
+            ->getProcess();
+
+        $process->mustRun();
     }
 
     /**
@@ -905,41 +942,20 @@ class Deployer
             $remote_dir = $this->remote_dir;
         }
 
-        $dirs = array();
-        $return = null;
-        $this->sshExec($remote_host, "ls -1 $remote_dir", $dirs, $return, '', '', LOG_DEBUG);
+        $pastDeploymentsList = $this->getPastDeploymentList($remote_host, $remote_dir);
 
-        if ($return !== 0) {
-            throw new DeployException('ssh initialize failed');
-        }
-
-        if (!count($dirs)) {
-            return null;
-        }
-
-        $past_deployments = array();
-        $deployment_timestamps = array();
-
-        foreach ($dirs as $dirname) {
-            if (
-                preg_match('/'. preg_quote($this->project_name) .'_\d{4}-\d{2}-\d{2}_\d{6}/', $dirname) &&
-                ($time = strtotime(str_replace(array($this->project_name .'_', '_'), array('', ' '), $dirname)))
-            ) {
-                $past_deployments[] = $dirname;
-                $deployment_timestamps[] = $time;
-            }
-        }
-
-        $count = count($deployment_timestamps);
+        $count = count($pastDeploymentsList);
 
         if ($count == 0) {
             return null;
         }
 
-        $this->log('Past deployments:', LOG_INFO, true);
-        $this->log($past_deployments, LOG_INFO, true);
+        $this->log('Past deployments:');
 
-        sort($deployment_timestamps);
+        $formatterHelper = new FormatterHelper();
+        $this->log($formatterHelper->formatBlock(array_values($pastDeploymentsList), 'info', true));
+
+        $deployment_timestamps = array_keys($pastDeploymentsList);
 
         if ($count >= 2) {
             return array_slice($deployment_timestamps, -2);
@@ -960,39 +976,22 @@ class Deployer
     {
         $this->log('collectPastDeployments', LOG_DEBUG);
 
-        $dirs = array();
-        $return = null;
-        $this->sshExec($remote_host, "ls -1 $remote_dir", $dirs, $return);
-
-        if ($return !== 0) {
-            throw new DeployException('ssh initialize failed');
-        }
-
-        if (!count($dirs)) {
-            return null;
-        }
-
-        $deployment_dirs = array();
-
-        foreach ($dirs as $dirname) {
-            if (preg_match('/'. preg_quote($this->project_name) .'_\d{4}-\d{2}-\d{2}_\d{6}/', $dirname)) {
-                $deployment_dirs[] = $dirname;
-            }
-        }
+        $pastDeploymentsList = $this->getPastDeploymentList($remote_host, $remote_dir);
 
         // the two latest deployments always stay
-        if (count($deployment_dirs) <= 2) {
+        $pastDeploymentsList = array_slice($pastDeploymentsList, 0, -2);
+
+        if (empty($pastDeploymentsList)) {
             return null;
         }
+
+        $deployment_timestamps = array_keys($pastDeploymentsList);
+        $deployment_dirs = array_values($pastDeploymentsList);
 
         $dirs_to_delete = array();
 
-        sort($deployment_dirs);
-
-        $deployment_dirs = array_slice($deployment_dirs, 0, -2);
-
         foreach ($deployment_dirs as $key => $dirname) {
-            $time = strtotime(str_replace(array($this->project_name .'_', '_'), array('', ' '), $dirname));
+            $time = $deployment_timestamps[$key];
 
             if ($time < strtotime('-1 month')) {
                 // deployments older than a month can go
@@ -1001,8 +1000,8 @@ class Deployer
                 $dirs_to_delete[] = $dirname;
             } elseif ($time < strtotime('-1 week')) {
                 // of deployments older than a week only the last one of the day stays
-                if (isset($deployment_dirs[$key+1])) {
-                    $time_next = strtotime(str_replace(array($this->project_name .'_', '_'), array('', ' '), $deployment_dirs[$key+1]));
+                if (isset($deployment_dirs[$key + 1])) {
+                    $time_next = $deployment_timestamps[$key + 1];
 
                     // if the next deployment was on the same day this one can go
                     if (date('j', $time_next) == date('j', $time)) {
@@ -1034,27 +1033,72 @@ class Deployer
     }
 
     /**
+     * Return a list of existing deployment directories on the remote host.
+     *
+     * @param string $remote_host
+     * @param string $remote_dir
+     * @return array                [ timestamp: directory, ... ]
+     * @throws DeployException
+     */
+    protected function getPastDeploymentList($remote_host, $remote_dir)
+    {
+        $process = ProcessBuilder::create()
+            ->add($this->ssh_path)->add('-p')->add($this->remote_port)->add($this->remote_user . '@' . $remote_host)
+            ->add('ls')->add('-1')->add($remote_dir)
+            ->getProcess();
+
+        $process->mustRun();
+
+        $dirs = explode(PHP_EOL, $process->getOutput());
+
+        $past_deployments = array();
+
+        foreach ($dirs as $dirname) {
+            if (strpos($dirname, $this->project_name) !== false) {
+                $dirnameWithoutProjectName =
+                    str_replace(
+                        str_replace(
+                            '%project_name%',
+                            $this->project_name,
+                            str_replace(
+                                '%timestamp%',
+                                '',
+                                self::REMOTE_DIR_FORMAT
+                            )
+                        ),
+                        '',
+                        $dirname
+                    );
+
+                try {
+                    $time = \DateTime::createFromFormat(self::REMOTE_DIR_TIMESTAMP_FORMAT, $dirnameWithoutProjectName)->format('U');
+
+                    $past_deployments[$time] = $dirname;
+                } catch (\Exception $exception) {
+                    // invalid date format, skip this directory
+                }
+            }
+        }
+
+        ksort($past_deployments);
+
+        return $past_deployments;
+    }
+
+    /**
      * Wrapper for SSH command's
      *
      * @param string $remote_host
      * @param string $command
      * @param array $output
      * @param int $return
-     * @param string $hide_pattern      Regexp to clean up output (eg. passwords)
-     * @param string $hide_replacement
      * @param int $ouput_loglevel
      */
-    protected function sshExec($remote_host, $command, &$output, &$return, $hide_pattern = '', $hide_replacement = '', $ouput_loglevel = LOG_INFO)
+    protected function sshExec($remote_host, $command, &$output, &$return, $ouput_loglevel = LOG_INFO)
     {
         $cmd = $this->ssh_path .' -p '. $this->remote_port .' '. $this->remote_user .'@'. $remote_host .' "'. str_replace('"', '\"', $command) .'"';
 
-        if ($hide_pattern != '') {
-            $show_cmd = preg_replace($hide_pattern, $hide_replacement, $cmd);
-        } else {
-            $show_cmd = $cmd;
-        }
-
-        $this->log('sshExec: '. $show_cmd, $ouput_loglevel);
+        $this->log('sshExec: '. $cmd, $ouput_loglevel);
 
         exec($cmd, $output, $return);
     }
@@ -1072,6 +1116,7 @@ class Deployer
 
         chdir($this->basedir);
 
+//        TODO vervangen door Process
         passthru($command, $return);
 
         $this->log('');
