@@ -3,12 +3,18 @@
 namespace Bugbyte\Deployer\Deploy;
 
 use Bugbyte\Deployer\Exception\DeployException;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * The deployer
  */
 class Deployer
 {
+    /**
+     * @var OutputInterface
+     */
+    protected $output;
+
     /**
      * If the deployer is run in debugging mode (more verbose output)
      *
@@ -223,11 +229,13 @@ class Deployer
     /**
      * Bouwt een nieuwe Deploy class op met de gegeven opties
      *
+     * @param OutputInterface $output
      * @param array $options
-     * @throws DeployException
      */
-    public function __construct(array $options)
+    public function __construct(OutputInterface $output, array $options)
     {
+        $this->output = $output;
+
         $this->project_name = $options['project_name'];
         $this->basedir = $options['basedir'];
         $this->remote_host = $options['remote_host'];
@@ -335,9 +343,9 @@ class Deployer
     /**
      * Run a dry-run to the remote server to show the changes to be made
      *
-     * @param string $action		 update or rollback
+     * @param string $action     update or rollback
      * @throws DeployException
-     * @return bool				 if the user wants to proceed with the deployment
+     * @return bool              if the user wants to proceed with the deployment
      */
     protected function check($action)
     {
@@ -748,9 +756,9 @@ class Deployer
      * Output wrapper
      *
      * @param string $message
-     * @param integer $level		  LOG_INFO (6)  = normal (always show),
-     *								LOG_DEBUG (7) = debugging (hidden by default)
-     * @param bool $extra_newline	 Automatisch een newline aan het eind toevoegen
+     * @param integer $level       LOG_INFO (6)  = normal (always show),
+     *                             LOG_DEBUG (7) = debugging (hidden by default)
+     * @param bool $extra_newline  Automatisch een newline aan het eind toevoegen
      */
     protected function log($message, $level = LOG_INFO, $extra_newline = false)
     {
@@ -763,11 +771,7 @@ class Deployer
         }
 
         if ($level == LOG_INFO || ($this->debug && $level == LOG_DEBUG)) {
-            echo $message . PHP_EOL;
-
-            if ($extra_newline) {
-                echo PHP_EOL;
-            }
+            $this->output->write($message . PHP_EOL, $extra_newline, OutputInterface::OUTPUT_NORMAL);
         }
 
         if ($this->logfile) {
@@ -1011,7 +1015,7 @@ class Deployer
      * @param string $command
      * @param array $output
      * @param int $return
-     * @param string $hide_pattern		Regexp to clean up output (eg. passwords)
+     * @param string $hide_pattern      Regexp to clean up output (eg. passwords)
      * @param string $hide_replacement
      * @param int $ouput_loglevel
      */

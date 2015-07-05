@@ -34,7 +34,7 @@ class Deploy extends Command
             $config['target'] = $target;
         }
 
-        $deploy = new Deployer($config);
+        $deploy = new Deployer($output, $config);
         $deploy->deploy();
     }
 }
